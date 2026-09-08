@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify tag matches VERSION
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          tag_version="${tag#v}"
+          file_version="$(cat VERSION | tr -d '[:space:]')"
+          echo "Tag: $tag (version $tag_version) — VERSION file: $file_version"
+          if [ "$tag_version" != "$file_version" ]; then
+            echo "::error::Tag $tag does not match VERSION file ($file_version). Refusing to release."
+            exit 1
+          fi
+
+      - name: Source validation
+        run: python scripts/validate_skill.py --mode source
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build runtime package
+        run: python scripts/package_runtime.py
+
+      - name: Runtime package validation
+        run: |
+          python - <<'PY'
+          import glob
+          import zipfile
+
+          zip_path = glob.glob("dist/scholarly-corpus-builder-v*.zip")[0]
+          with zipfile.ZipFile(zip_path) as zf:
+              zf.extractall("dist/_extracted")
+          PY
+          root=$(find dist/_extracted -mindepth 1 -maxdepth 1 -type d)
+          python scripts/validate_skill.py --mode runtime --root "$root"
+
+      - name: Verify checksum
+        run: |
+          cd dist
+          sha256sum -c "$(ls *.sha256)"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/scholarly-corpus-builder-v*.zip
+            dist/scholarly-corpus-builder-v*.zip.sha256
+          generate_release_notes: true
+          body: |
+            Runtime ZIP = frozen end-user package (extract and copy the
+            `scholarly-corpus-builder/` folder into your Agent Skills
+            directory).
+
+            Source ZIP (GitHub's automatically generated archive) = a
+            development-repository snapshot at this tag, including tests,
+            evals, and CI configuration — not intended for direct Skill
+            installation.

@@ -1,0 +1,24 @@
+# Build output — never commit built packages
+dist/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Secrets — should never exist in this repo, blocked defensively anyway
+.env
+.env.*
+*.key
+*.pem
+credentials*
+secrets*

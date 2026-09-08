@@ -1,0 +1,51 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Source validation
+        run: python scripts/validate_skill.py --mode source
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Build runtime package
+        run: python scripts/package_runtime.py
+
+      - name: Runtime package validation
+        run: |
+          python - <<'PY'
+          import glob
+          import zipfile
+
+          zip_path = glob.glob("dist/scholarly-corpus-builder-v*.zip")[0]
+          with zipfile.ZipFile(zip_path) as zf:
+              zf.extractall("dist/_extracted")
+          PY
+          root=$(find dist/_extracted -mindepth 1 -maxdepth 1 -type d)
+          python scripts/validate_skill.py --mode runtime --root "$root"
+
+      - name: Upload runtime package (CI artifact only — not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-runtime-package
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          retention-days: 7
