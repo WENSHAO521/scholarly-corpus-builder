@@ -11,6 +11,11 @@ compact, reproducible, source-traceable representation of how a scholarly
 community, journal, historical tradition, or individual author structures
 academic writing.
 
+**[ARCHITECTURE.html](ARCHITECTURE.html)** — open in a browser for a visual
+pipeline diagram (request → gate → adapters → resolution → sampling →
+analytics → profiles → compiler → downstream skills) and the guarantees each
+stage actually enforces.
+
 ## What it does
 
 - Acquires the minimum lawful scholarly material needed to answer a specific

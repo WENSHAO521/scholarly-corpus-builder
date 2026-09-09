@@ -344,6 +344,21 @@ milestones land; VERSION is not bumped until a real release is cut.
   docs total, still directory-scanned with drift-checking, not
   hand-copied).
 
+### Added
+
+- `ARCHITECTURE.html` — a standalone, self-contained visual pipeline
+  diagram (opens directly in a browser, no build step): the real
+  request → gate → 7-adapter fan-out → canonical record →
+  identifier/dedup/version resolution → OA resolver → sampling/
+  sufficiency/manifest → text normalizer/analytics/stability → 5
+  profile types → compiler → downstream-skills flow, plus a
+  test-enforced "what each stage guarantees" section and an explicit
+  scope/honesty note (the real bugs found, what's not yet validated).
+  Linked from `README.md`. Included in the runtime package — it's a
+  genuinely useful artifact for anyone using the Skill, not just
+  developers — so `RUNTIME_REQUIRED_FILES` and both validator/packaging
+  test fixtures were updated accordingly.
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
