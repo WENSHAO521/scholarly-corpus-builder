@@ -112,7 +112,7 @@ def _journal_statements(journal_profile: Dict[str, Any]) -> List[PolicyStatement
     intro = journal_profile.get("introduction", {})
     if intro.get("contribution_position"):
         statements.append(PolicyStatement(
-            "In the sampled corpus, this journal's introductions %s state the contribution "
+            "In the sampled corpus, this journal's introductions %s "
             "(an observed pattern, not a formal submission requirement)." % intro["contribution_position"],
             OBSERVED, "journal.introduction.contribution_position", journal_profile.get("confidence", "medium"),
         ))

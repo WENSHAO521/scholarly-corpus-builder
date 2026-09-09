@@ -142,7 +142,7 @@ def author_vs_journal_adaptation(author_profile: Dict[str, Any], journal_profile
     do_not_change = []
 
     journal_intro = journal_profile.get("introduction", {})
-    if journal_intro.get("contribution_position") == "commonly stated explicitly":
+    if journal_intro.get("contribution_position") == "commonly state the contribution explicitly":
         adaptation_implications.append(
             "This journal's sampled corpus commonly states the contribution explicitly and early — "
             "consider surfacing your contribution sooner in the introduction."

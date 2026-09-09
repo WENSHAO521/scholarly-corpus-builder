@@ -45,7 +45,7 @@ def build_journal_profile(
             "dominant_architecture": style.argument_architecture[0] if style.argument_architecture else "unclear",
             "literature_density": "high" if literature_share > 0.3 else ("low" if literature_share < 0.1 else "moderate"),
             "contribution_position": (
-                "commonly stated explicitly" if contribution_share > 0.3 else "rarely stated explicitly"
+                "commonly state the contribution explicitly" if contribution_share > 0.3 else "rarely state the contribution explicitly"
             ),
         },
         "prose": {

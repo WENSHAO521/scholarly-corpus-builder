@@ -259,6 +259,20 @@ milestones land; VERSION is not bumped until a real release is cut.
   40 to 100 to lock this in. Short of the original spec's 150+
   aspiration — reported honestly rather than padded to hit the number.
 
+### Fixed
+
+- A real bug found while generating a concrete `VOICE_CONTEXT_V1`
+  example for documentation: the compiler's journal-observation
+  template appended "state the contribution" onto a label
+  (`contribution_position`) that already read as a full phrase
+  ("commonly stated explicitly"), producing a grammatically broken
+  sentence ("...introductions rarely stated explicitly state the
+  contribution..."). Fixed at the source by making
+  `scb/profiles/journal.py`'s label a complete, self-contained clause
+  ("commonly state the contribution explicitly"), with the one other
+  dependent site (`scb/comparison.py`'s adaptation-suggestion check)
+  updated to match. All 266 tests still pass.
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
