@@ -359,6 +359,18 @@ milestones land; VERSION is not bumped until a real release is cut.
   developers — so `RUNTIME_REQUIRED_FILES` and both validator/packaging
   test fixtures were updated accordingly.
 
+### Changed
+
+- Replaced `ARCHITECTURE.html` with `architecture-diagram.svg` — the
+  same pipeline diagram, but as a standalone image embedded directly in
+  `README.md` so it renders inline wherever the README does (GitHub,
+  editors, markdown viewers) instead of requiring the page to be
+  downloaded and opened separately. The prose (principle, per-stage
+  guarantees, scope note) that accompanied the diagram in
+  `ARCHITECTURE.html` was dropped along with the page rather than kept
+  as a second file — the diagram now stands alone. `RUNTIME_REQUIRED_FILES`
+  and the validator/packaging test fixtures were updated to match.
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,

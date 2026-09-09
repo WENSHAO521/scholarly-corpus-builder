@@ -11,10 +11,7 @@ compact, reproducible, source-traceable representation of how a scholarly
 community, journal, historical tradition, or individual author structures
 academic writing.
 
-**[ARCHITECTURE.html](ARCHITECTURE.html)** — open in a browser for a visual
-pipeline diagram (request → gate → adapters → resolution → sampling →
-analytics → profiles → compiler → downstream skills) and the guarantees each
-stage actually enforces.
+![Pipeline architecture: a corpus request passes through the corpus selection gate, fans out across six scholarly-API adapters plus a local file adapter, normalizes into one canonical record, resolves identifiers, deduplicates, resolves versions, resolves open-access state, samples and gates for sufficiency into a corpus manifest, runs text normalization, style analytics and a stability check, builds one of five profile types, compiles the result into three cross-skill protocols, and hands off to downstream writing skills outside this repository.](architecture-diagram.svg)
 
 ## What it does
 

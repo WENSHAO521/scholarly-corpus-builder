@@ -85,7 +85,7 @@ RUNTIME_REQUIRED_FILES = [
     "LICENSE",
     "VERSION",
     "agents/openai.yaml",
-    "ARCHITECTURE.html",
+    "architecture-diagram.svg",
 ] + ["references/%s" % name for name in RUNTIME_REFERENCE_FILES] + SCB_ANCHOR_FILES
 
 # Additional files required only in the full development repository.

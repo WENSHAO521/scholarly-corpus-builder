@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 1066" width="880" height="1066" role="img" aria-labelledby="scbTitle scbDesc">
+  <title id="scbTitle">Scholarly Corpus Builder — pipeline architecture</title>
+  <desc id="scbDesc">Flow diagram: a corpus request passes through the corpus selection gate, fans out across six scholarly-API adapters plus a local file adapter, normalizes into one canonical record, resolves identifiers, deduplicates, resolves versions, resolves open-access state, samples and gates for sufficiency into a corpus manifest, runs text normalization, style analytics and a stability check, builds one of five profile types, compiles the result into three cross-skill protocols, and hands off to downstream writing skills that live outside this repository.</desc>
+
+  <style>
+    svg {
+      --bg: #FBFBF6;
+      --ink: #16211C;
+      --ink-muted: #58635C;
+      --ink-faint: #8B958D;
+      --line: #CFD3C6;
+      --accent: #1B6E70;
+      --accent-ink: #0E4547;
+      --surface-raised: #FFFFFF;
+      font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg {
+        --bg: #171F1B;
+        --ink: #E8EBE3;
+        --ink-muted: #A2AC9F;
+        --ink-faint: #6C766D;
+        --line: #2C3630;
+        --accent: #4BC0BE;
+        --accent-ink: #B9EEEB;
+        --surface-raised: #1D2621;
+      }
+    }
+    text { fill: var(--ink); }
+  </style>
+
+  <rect x="0" y="0" width="880" height="1066" fill="var(--bg)"/>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--ink)" />
+    </marker>
+    <marker id="arrowAccent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)" />
+    </marker>
+  </defs>
+
+  <g font-family="IBM Plex Mono, SFMono-Regular, Consolas, monospace">
+
+    <!-- 1. CORPUS REQUEST -->
+    <rect x="290" y="14" width="300" height="60" rx="7" fill="var(--bg)" stroke="var(--ink)" stroke-width="1.6"/>
+    <text x="440" y="38" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="0.04em">CORPUS REQUEST</text>
+    <text x="440" y="58" text-anchor="middle" font-size="10" fill="var(--ink-muted)">type &#183; target &#183; purpose &#183; depth</text>
+
+    <line x1="440" y1="74" x2="440" y2="112" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="97" font-size="10" font-style="italic" fill="var(--ink-muted)">gate.check()</text>
+
+    <!-- 2. CORPUS SELECTION GATE -->
+    <rect x="260" y="114" width="360" height="58" rx="7" fill="var(--bg)" stroke="var(--ink)" stroke-width="1.6"/>
+    <text x="440" y="138" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="0.04em">CORPUS SELECTION GATE</text>
+    <text x="440" y="158" text-anchor="middle" font-size="9" fill="var(--ink-muted)">CURRENT &#183; AGING &#183; STALE &#183; NEW_TARGET &#183; USER_REQUESTED_REFRESH</text>
+
+    <line x1="440" y1="172" x2="440" y2="212" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="197" font-size="10" font-style="italic" fill="var(--ink-muted)">search() &#215; 7 adapters</text>
+
+    <!-- 3. SOURCE ADAPTER LAYER -->
+    <text x="440" y="212" text-anchor="middle" font-size="10.5" letter-spacing="0.1em" fill="var(--ink-faint)">SOURCE ADAPTER LAYER</text>
+
+    <g font-size="10.5" font-weight="500">
+      <rect x="40"  y="222" width="104" height="42" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="92" y="247" text-anchor="middle">OpenAlex</text>
+
+      <rect x="156" y="222" width="104" height="42" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="208" y="247" text-anchor="middle">Crossref</text>
+
+      <rect x="272" y="222" width="104" height="42" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="324" y="247" text-anchor="middle">PubMed</text>
+
+      <rect x="388" y="222" width="104" height="42" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="440" y="247" text-anchor="middle">PMC</text>
+
+      <rect x="504" y="222" width="104" height="42" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="556" y="247" text-anchor="middle">arXiv</text>
+
+      <rect x="620" y="222" width="104" height="42" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="672" y="247" text-anchor="middle">DOAJ</text>
+
+      <rect x="736" y="222" width="104" height="42" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="3 3"/>
+      <text x="788" y="240" text-anchor="middle">User</text>
+      <text x="788" y="253" text-anchor="middle">Files</text>
+    </g>
+
+    <g stroke="var(--ink)" stroke-width="1" opacity="0.55">
+      <line x1="92"  y1="264" x2="440" y2="300"/>
+      <line x1="208" y1="264" x2="440" y2="300"/>
+      <line x1="324" y1="264" x2="440" y2="300"/>
+      <line x1="440" y1="264" x2="440" y2="300"/>
+      <line x1="556" y1="264" x2="440" y2="300"/>
+      <line x1="672" y1="264" x2="440" y2="300"/>
+      <line x1="788" y1="264" x2="440" y2="300"/>
+    </g>
+    <line x1="440" y1="300" x2="440" y2="322" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="316" font-size="10" font-style="italic" fill="var(--ink-muted)">normalize()</text>
+
+    <!-- 4. CANONICAL RECORD -->
+    <rect x="290" y="324" width="300" height="56" rx="7" fill="var(--bg)" stroke="var(--ink)" stroke-width="1.6"/>
+    <text x="440" y="347" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="0.04em">CANONICAL RECORD</text>
+    <text x="440" y="366" text-anchor="middle" font-size="9.5" fill="var(--ink-muted)">doi &#183; pmid &#183; pmcid &#183; arxiv_id &#183; issn</text>
+
+    <line x1="440" y1="380" x2="440" y2="416" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="402" font-size="10" font-style="italic" fill="var(--ink-muted)">identify &#8594; dedup &#8594; version</text>
+
+    <!-- 5. resolver chain -->
+    <rect x="40"  y="418" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="166" y="447" text-anchor="middle" font-size="11.5" font-weight="600">IDENTIFIER RESOLVER</text>
+
+    <line x1="292" y1="442" x2="312" y2="442" stroke="var(--ink)" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+    <rect x="314" y="418" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="440" y="447" text-anchor="middle" font-size="11.5" font-weight="600">DEDUPLICATOR</text>
+
+    <line x1="566" y1="442" x2="586" y2="442" stroke="var(--ink)" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+    <rect x="588" y="418" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="714" y="447" text-anchor="middle" font-size="11.5" font-weight="600">VERSION RESOLVER</text>
+
+    <line x1="440" y1="466" x2="440" y2="502" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="488" font-size="10" font-style="italic" fill="var(--ink-muted)">resolve_access()</text>
+
+    <!-- 6. OA RESOLVER -->
+    <rect x="270" y="504" width="340" height="58" rx="7" fill="var(--bg)" stroke="var(--ink)" stroke-width="1.6"/>
+    <text x="440" y="528" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="0.04em">OA RESOLVER</text>
+    <text x="440" y="548" text-anchor="middle" font-size="9" fill="var(--ink-muted)">STRUCTURED_FULLTEXT &#8594; OA_PDF &#8594; ABSTRACT &#8594; RESTRICTED &#8594; METADATA_ONLY</text>
+
+    <line x1="440" y1="562" x2="440" y2="598" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="584" font-size="10" font-style="italic" fill="var(--ink-muted)">sample() &#8594; gate()</text>
+
+    <!-- 7. sampling / sufficiency / manifest -->
+    <rect x="40"  y="600" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="166" y="629" text-anchor="middle" font-size="11.5" font-weight="600">SAMPLING ENGINE</text>
+
+    <line x1="292" y1="624" x2="312" y2="624" stroke="var(--ink)" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+    <rect x="314" y="600" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="440" y="622" text-anchor="middle" font-size="11.5" font-weight="600">SUFFICIENCY GATE</text>
+    <text x="440" y="637" text-anchor="middle" font-size="9" fill="var(--ink-muted)">COMPLETE &#183; PARTIAL &#183; INSUFFICIENT</text>
+
+    <line x1="566" y1="624" x2="586" y2="624" stroke="var(--ink)" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+    <rect x="588" y="600" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="714" y="629" text-anchor="middle" font-size="11.5" font-weight="600">CORPUS MANIFEST</text>
+
+    <line x1="440" y1="648" x2="440" y2="684" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="670" font-size="10" font-style="italic" fill="var(--ink-muted)">normalize() &#8594; analyze()</text>
+
+    <!-- 8. text normalizer / analytics / stability -->
+    <rect x="40"  y="686" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="166" y="715" text-anchor="middle" font-size="11.5" font-weight="600">TEXT NORMALIZER</text>
+
+    <line x1="292" y1="710" x2="312" y2="710" stroke="var(--ink)" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+    <rect x="314" y="686" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="440" y="715" text-anchor="middle" font-size="11.5" font-weight="600">STYLE ANALYTICS</text>
+
+    <line x1="566" y1="710" x2="586" y2="710" stroke="var(--ink)" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+    <rect x="588" y="686" width="252" height="48" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.3"/>
+    <text x="714" y="708" text-anchor="middle" font-size="11.5" font-weight="600">STABILITY ENGINE</text>
+    <text x="714" y="723" text-anchor="middle" font-size="9" fill="var(--ink-muted)">STABLE &#183; UNSTABLE</text>
+
+    <line x1="440" y1="734" x2="440" y2="770" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="756" font-size="10" font-style="italic" fill="var(--ink-muted)">build_profile()</text>
+
+    <!-- 9. PROFILE BUILDER fan-out -->
+    <text x="440" y="770" text-anchor="middle" font-size="10.5" letter-spacing="0.1em" fill="var(--ink-faint)">PROFILE BUILDER</text>
+
+    <g font-size="11" font-weight="500">
+      <rect x="40"  y="780" width="148" height="44" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="114" y="807" text-anchor="middle">Journal</text>
+
+      <rect x="204" y="780" width="148" height="44" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="278" y="807" text-anchor="middle">Discipline</text>
+
+      <rect x="368" y="780" width="148" height="44" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="442" y="807" text-anchor="middle">Historical</text>
+
+      <rect x="532" y="780" width="148" height="44" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="606" y="807" text-anchor="middle">Author</text>
+
+      <rect x="696" y="780" width="148" height="44" rx="6" fill="var(--surface-raised)" stroke="var(--ink)" stroke-width="1.2"/>
+      <text x="770" y="807" text-anchor="middle">Book</text>
+    </g>
+
+    <g stroke="var(--ink)" stroke-width="1" opacity="0.55">
+      <line x1="114" y1="824" x2="440" y2="856"/>
+      <line x1="278" y1="824" x2="440" y2="856"/>
+      <line x1="442" y1="824" x2="440" y2="856"/>
+      <line x1="606" y1="824" x2="440" y2="856"/>
+      <line x1="770" y1="824" x2="440" y2="856"/>
+    </g>
+    <line x1="440" y1="856" x2="440" y2="878" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="872" font-size="10" font-style="italic" fill="var(--ink-muted)">compile()</text>
+
+    <!-- 10. PROFILE COMPILER -->
+    <rect x="250" y="880" width="380" height="66" rx="7" fill="var(--bg)" stroke="var(--ink)" stroke-width="1.6"/>
+    <text x="440" y="905" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="0.04em">PROFILE COMPILER</text>
+    <text x="440" y="924" text-anchor="middle" font-size="9" fill="var(--ink-muted)">OBSERVED &#183; RECOMMENDED &#183; MANDATORY</text>
+    <text x="440" y="938" text-anchor="middle" font-size="9" fill="var(--accent-ink)">SCHOLARLY_PROFILE_V1 &#183; VOICE_CONTEXT_V1 &#183; JOURNAL_STYLE_CONTEXT_V1</text>
+
+    <line x1="440" y1="946" x2="440" y2="982" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arrowAccent)"/>
+    <text x="454" y="968" font-size="10" font-style="italic" fill="var(--ink-muted)">hand off</text>
+
+    <!-- 11. downstream skills (external, dashed) -->
+    <text x="440" y="982" text-anchor="middle" font-size="10.5" letter-spacing="0.1em" fill="var(--ink-faint)">DOWNSTREAM SKILLS</text>
+
+    <rect x="180" y="994" width="240" height="52" rx="7" fill="var(--bg)" stroke="var(--ink)" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="300" y="1016" text-anchor="middle" font-size="11.5" font-weight="500">Scholarly Voice</text>
+    <text x="300" y="1032" text-anchor="middle" font-size="11.5" font-weight="500">Engine</text>
+
+    <rect x="460" y="994" width="240" height="52" rx="7" fill="var(--bg)" stroke="var(--ink)" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="580" y="1016" text-anchor="middle" font-size="11.5" font-weight="500">Journal Fit</text>
+    <text x="580" y="1032" text-anchor="middle" font-size="11.5" font-weight="500">Engine</text>
+
+  </g>
+</svg>

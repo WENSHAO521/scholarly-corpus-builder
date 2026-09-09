@@ -72,7 +72,7 @@ def build_minimal_source_tree(base_dir):
     _write(os.path.join(base_dir, "VERSION"), "0.1.1")
     _write(os.path.join(base_dir, "CHANGELOG.md"), "# Changelog\n")
     _write(os.path.join(base_dir, "agents", "openai.yaml"), "name: scholarly-corpus-builder\n")
-    _write(os.path.join(base_dir, "ARCHITECTURE.html"), "<title>Stub</title>\n")
+    _write(os.path.join(base_dir, "architecture-diagram.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>\n")
 
     for ref in validate_skill.RUNTIME_REFERENCE_FILES:
         content = "# %s\n\nExample:\n\n```json\n{\"a\": 1}\n```\n" % ref
@@ -100,7 +100,7 @@ def build_minimal_runtime_tree(base_dir):
     _write(os.path.join(base_dir, "LICENSE"), "MIT License\n")
     _write(os.path.join(base_dir, "VERSION"), "0.1.1")
     _write(os.path.join(base_dir, "agents", "openai.yaml"), "name: scholarly-corpus-builder\n")
-    _write(os.path.join(base_dir, "ARCHITECTURE.html"), "<title>Stub</title>\n")
+    _write(os.path.join(base_dir, "architecture-diagram.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>\n")
     for ref in validate_skill.RUNTIME_REFERENCE_FILES:
         _write(os.path.join(base_dir, "references", ref), "# %s\n" % ref)
     for rel in validate_skill.SCB_ANCHOR_FILES:
