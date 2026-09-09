@@ -79,6 +79,47 @@ milestones land; VERSION is not bumped until a real release is cut.
   asserted no dominance suppression while reusing a fixture with identical
   issue metadata across records.
 
+### Milestone: Measured Style Analytics + Corpus Stability (v0.3.0)
+
+- `scb/text_normalize.py` — splits extracted text into sections with a
+  normalized semantic role (`introduction`, `methods`, `results`, ...)
+  where recognized, and `role="other"` with the original heading
+  preserved verbatim where not — a humanities/law/philosophy document is
+  never forced into IMRaD.
+- `scb/analytics/` — sentence metrics (length distribution, IQR,
+  variance, short/long share), paragraph metrics, lexical metrics
+  (first-person/passive-voice/nominalization/hedge/certainty/transition
+  rates per 1,000 words), citation metrics (author-date and
+  numeric-bracket detection, density, sentence-final share,
+  citation-free paragraph share), section-architecture metrics
+  (word share per role, dedicated-limitations detection, contribution
+  placement), a rule-based claim classifier (8 categories, fixed
+  priority order, hedge co-occurrence), rule-based rhetorical-move
+  detection (14 moves, multi-label per paragraph), and an intellectual-
+  rhythm detector (a small named set of 2/3-gram sentence-role
+  sequences, always reported at "low" confidence). Every classifier
+  module's docstring states plainly that its output is an inferred
+  heuristic label, not objective fact.
+- `scb/profile_schema.py` — aggregates per-document analytics into the
+  corpus-level StyleProfile schema from references/style-feature-schema.md,
+  with sample-size-based confidence labeling and honest small-sample
+  labels (`illustrative` / `limited` / `moderate` / `potentially_robust`).
+- `scb/stability.py` — the Corpus Stability Engine: deterministic
+  split-corpus comparison across five numeric features with an explicit
+  35%-relative-difference tolerance (not a fitted statistical model),
+  yielding `STABLE`/`MOSTLY_STABLE`/`UNSTABLE`/`INSUFFICIENT_SAMPLE`;
+  plus a lightweight, reproducible (fixed-seed) bootstrap resampler for
+  sentence-length spread, using only the standard library.
+- 53 new tests (211 total, all passing), including a genuinely
+  constructed "stable" and "unstable" synthetic corpus pair that
+  exercises the split-test classifier end-to-end rather than only
+  mocking it.
+- Two more real bugs caught and fixed by these tests before commit: a
+  text-normalizer heuristic that silently discarded multi-line reference
+  lists sharing a paragraph block with their heading, and a causal-claim
+  cue list that missed the bare verb form "cause" (only matched
+  "causes"/"caused"/"causing").
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
