@@ -2,10 +2,11 @@
 
 All notable changes to this skill are documented here.
 
-## [Unreleased]
+## [0.9.1] - 2026-09-09
 
-Toward v1.0.0. Not yet a version bump — see "Still remaining for v1.0.0"
-below for what genuinely isn't done yet.
+A documentation/evidence patch on top of v0.9.0 — no `scb/` code changed,
+no schema changed, no API changed. Toward v1.0.0, not v1.0.0 itself; see
+v0.9.0's "Known limitations" below for what still isn't done.
 
 ### Added — cross-disciplinary acquisition demonstration (2026-09-09)
 
