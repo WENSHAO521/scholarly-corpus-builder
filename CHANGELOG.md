@@ -4,8 +4,21 @@ All notable changes to this skill are documented here.
 
 ## [Unreleased]
 
-Working toward v1.0.0 per the roadmap below. Entries here are added as
-milestones land; VERSION is not bumped until a real release is cut.
+Nothing yet — entries land here as work continues toward v1.0.0.
+
+## [0.9.0] - 2026-09-09
+
+Everything below was built in one continuous push from the v0.1.1
+engineering-hardening baseline: the full acquisition/resolution/analytics/
+profiling/compilation pipeline, live-verified against real scholarly APIs,
+with two real upstream API changes and two real internal bugs found and
+fixed along the way rather than assumed away. Milestones v0.2.0 through
+v0.5.0 are complete; v0.7.0 (refresh infrastructure) is complete; v0.6.0
+(robustness) and v0.8.0 (multilingual) are substantially but not fully
+done, exactly as scoped in the sections below. **v1.0.0 is not claimed** —
+see "Known limitations" at the end of this entry for what specifically
+remains, and README.md's Limitations section for the standing version of
+the same list.
 
 ### Milestone: Source Adapter Layer (toward v0.2.0)
 
@@ -370,6 +383,32 @@ milestones land; VERSION is not bumped until a real release is cut.
   `ARCHITECTURE.html` was dropped along with the page rather than kept
   as a second file — the diagram now stands alone. `RUNTIME_REQUIRED_FILES`
   and the validator/packaging test fixtures were updated to match.
+
+### Known limitations of this release
+
+Carried forward honestly rather than smoothed over — see README.md's
+Limitations section for the standing copy of this list:
+
+- No cross-disciplinary, human-reviewed benchmark across multiple
+  fields — one real, live, small-scale acquisition demonstration exists
+  (public administration / policy diffusion via OpenAlex), not a
+  validated benchmark.
+- No Scholarly Voice Engine A/B comparison — that downstream skill does
+  not exist in this repository to test against.
+- Claim/rhetorical-move/intellectual-rhythm classification is rule-based
+  English-only keyword matching, not NLP/ML; every such output is
+  labeled inferred, never measured fact.
+- Multilingual support is real but partial: language detection and
+  per-language separation work, but the English-only cue lists mean
+  full analytics are only available for English text — everything else
+  gets structural metrics plus an explicit `not_applicable` marker.
+- Correctness against live scholarly APIs is as-verified-2026-09-09, not
+  a permanent guarantee — two real drift incidents (OpenAlex, PMC) were
+  already found and fixed during this build, and more should be
+  expected over time (see `.github/workflows/live-check.yml`).
+- 150 eval fixtures, not the 150+ growth trajectory the original spec
+  gestured toward continuing indefinitely — held here rather than
+  padded further for the sake of a bigger number.
 
 ## [0.1.1] - 2026-09-09
 
