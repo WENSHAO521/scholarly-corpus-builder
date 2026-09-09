@@ -143,6 +143,38 @@ milestones land; VERSION is not bumped until a real release is cut.
   persistence itself; that stays a caller/host decision.
 - 16 new tests (227 total, all passing).
 
+### Milestone: Profile Compiler + Cross-Skill Protocol (v0.5.0)
+
+- `scb/compiler.py` — the Profile Compiler: turns a measured profile
+  into policy statements tagged `OBSERVED` / `RECOMMENDED` / `MANDATORY`,
+  where `MANDATORY` is only ever produced from a profile's own
+  `do_not_preserve` corrections or caller-supplied official
+  requirements — never invented from an observed pattern (tested
+  explicitly: a journal's observed contribution-placement pattern always
+  compiles to `OBSERVED`, never `MANDATORY`). Also builds the three
+  standardized cross-skill output contracts from
+  references/integration.md: `SCHOLARLY_PROFILE_V1`, `VOICE_CONTEXT_V1`,
+  `JOURNAL_STYLE_CONTEXT_V1`.
+- `scb/comparison.py` — profile comparison (shared traits vs. material
+  differences, 25%-relative-difference threshold) and
+  `author_vs_journal_adaptation()`, which is tested to never recommend
+  imitating a journal's phrasing and always keeps "author's substantive
+  argumentative voice" in `do_not_change`. `synthesize_composite_voice()`
+  applies the author > discipline > journal > historical precedence
+  from PART XXXVI without mechanically averaging the layers together.
+- 20 new tests (238 total, all passing). One more real bug caught and
+  fixed before commit: journal profiles deliberately expose only labels
+  ("short"/"moderate"/"long") for sentence length and citation density
+  rather than raw numbers (to avoid the fake-statistical-precision
+  problem in PART LXXXI), but the comparison engine only knew how to
+  diff raw numbers — so an author-vs-journal comparison silently found
+  zero differences. Fixed by extracting the label-bucketing rule into a
+  shared function (`scb/profile_schema.py: label_sentence_length` /
+  `label_density`) that both the journal-profile builder and the
+  comparison engine now use, so a raw number and a label can be compared
+  honestly by label instead of either fabricating precision or silently
+  comparing nothing.
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,

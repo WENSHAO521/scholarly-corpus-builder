@@ -59,6 +59,30 @@ def _label_rate(rate: float, low_cut: float, high_cut: float) -> str:
     return "moderate"
 
 
+def label_sentence_length(median: float) -> str:
+    """Shared bucketing rule so a raw numeric sentence length (e.g. from
+    an author profile) and a label-only profile (e.g. a journal
+    profile, which deliberately does not expose raw numbers — see
+    references/journal-profile.md) can still be compared honestly by
+    label rather than by fabricated precision (used by
+    scb/profiles/journal.py and scb/comparison.py)."""
+    if median <= 15:
+        return "short"
+    if median >= 25:
+        return "long"
+    return "moderate"
+
+
+def label_density(rate: float) -> str:
+    """Shared bucketing rule for a per-1000-word rate (e.g. citation
+    density) — see label_sentence_length()."""
+    if rate <= 5:
+        return "low"
+    if rate >= 20:
+        return "high"
+    return "moderate"
+
+
 @dataclass
 class StyleProfile:
     profile_type: str

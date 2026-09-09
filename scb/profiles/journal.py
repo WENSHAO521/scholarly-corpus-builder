@@ -11,24 +11,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from scb.profile_schema import build_style_profile
+from scb.profile_schema import build_style_profile, label_density, label_sentence_length
 from scb.text_normalize import Document
-
-
-def _label_sentence_length(median: float) -> str:
-    if median <= 15:
-        return "short"
-    if median >= 25:
-        return "long"
-    return "moderate"
-
-
-def _label_density(rate: float) -> str:
-    if rate <= 5:
-        return "low"
-    if rate >= 20:
-        return "high"
-    return "moderate"
 
 
 def build_journal_profile(
@@ -65,14 +49,14 @@ def build_journal_profile(
             ),
         },
         "prose": {
-            "sentence_length": _label_sentence_length(style.sentence.get("median_length", 0)),
+            "sentence_length": label_sentence_length(style.sentence.get("median_length", 0)),
             "sentence_variation": style.sentence.get("variation", "unknown"),
             "first_person": style.first_person,
             "rhetorical_intensity": "assertive" if style.lexical.get("certainty_rate_per_1000", 0) > style.lexical.get("hedge_rate_per_1000", 0) else "qualified",
             "qualification_density": style.qualification,
         },
         "citations": {
-            "density": _label_density(style.citations.get("citations_per_1000_words", 0)),
+            "density": label_density(style.citations.get("citations_per_1000_words", 0)),
             "dominant_placement": "sentence_final" if style.citations.get("sentence_final_citation_share", 0) > 0.5 else "distributed",
         },
         "sections": {"common_patterns": common_patterns},
