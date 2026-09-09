@@ -103,9 +103,14 @@ SOURCE_REQUIRED_EVAL_FILES = [
     "evals/copyright-boundary.jsonl",
     "evals/journal-profile.jsonl",
     "evals/author-profile.jsonl",
+    "evals/oa-resolution.jsonl",
+    "evals/dedup-versioning.jsonl",
+    "evals/analytics-honesty.jsonl",
+    "evals/compiler-protocol.jsonl",
+    "evals/refresh-and-robustness.jsonl",
 ]
 
-MIN_TOTAL_EVALS = 40
+MIN_TOTAL_EVALS = 100
 
 # Directories/files that must NOT appear anywhere in a runtime package.
 FORBIDDEN_RUNTIME_DIR_NAMES = {

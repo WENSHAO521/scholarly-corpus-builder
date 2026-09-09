@@ -245,6 +245,20 @@ milestones land; VERSION is not bumped until a real release is cut.
   demonstration of the failure-handling path working under real
   conditions, not just in offline fault-injection tests.
 
+### Milestone: Eval Suite Growth
+
+- Added 5 new eval fixture files covering scenarios only the v0.2-v0.6
+  code layers actually introduced — not padding: `oa-resolution.jsonl`
+  (12), `dedup-versioning.jsonl` (12), `analytics-honesty.jsonl` (14,
+  covering the OBSERVED/inferred distinction for every classifier
+  module), `compiler-protocol.jsonl` (12, covering the OBSERVED/
+  RECOMMENDED/MANDATORY distinction and the three cross-skill
+  protocols), `refresh-and-robustness.jsonl` (15, covering the Corpus
+  Selection Gate states and offline failure-handling expectations).
+  Total eval fixtures: 113 (up from 48). `MIN_TOTAL_EVALS` raised from
+  40 to 100 to lock this in. Short of the original spec's 150+
+  aspiration — reported honestly rather than padded to hit the number.
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
