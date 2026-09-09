@@ -175,6 +175,9 @@ bias, author-concentration bias) when material — see `references/corpus-policy
 - `references/copyright-boundary.md` — the hard legal/ethical rules
 - `references/refresh-policy.md` — freshness windows, corpus selection gate, incremental refresh, versioning
 - `references/integration.md` — how downstream skills (Voice Engine, Journal Fit Engine, Router) should call this skill
+- `references/source-adapters.md` — capability matrix and known limitations for the six scholarly-API adapters + user files
+- `references/oa-resolution.md` — the access-state resolution sequence and retrieval-depth model
+- `references/stability-analysis.md` — the split-corpus stability test and bootstrap resampler
 
 ## Tool policy
 

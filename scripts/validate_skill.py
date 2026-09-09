@@ -38,9 +38,12 @@ RUNTIME_REFERENCE_FILES = [
     "historical-profile.md",
     "integration.md",
     "journal-profile.md",
+    "oa-resolution.md",
     "provenance-schema.md",
     "refresh-policy.md",
+    "source-adapters.md",
     "source-hierarchy.md",
+    "stability-analysis.md",
     "style-feature-schema.md",
 ]
 

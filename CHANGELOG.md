@@ -331,6 +331,19 @@ milestones land; VERSION is not bumped until a real release is cut.
   reached with genuinely distinct scenarios rather than padding.
   `MIN_TOTAL_EVALS` raised from 100 to 140.
 
+### Milestone: Implementation-Level Reference Docs
+
+- `references/source-adapters.md`, `references/oa-resolution.md`,
+  `references/stability-analysis.md` — closing the gap between the
+  policy documented in v0.1.1's references and the code that now
+  actually implements it. Each is grounded in real implementation
+  detail (capability matrix, the PMC/OpenAlex API drift already found
+  and fixed, the exact stability-test thresholds) rather than
+  restating policy already covered elsewhere. Added to `SKILL.md`'s
+  reference index and the runtime reference allowlist (14 reference
+  docs total, still directory-scanned with drift-checking, not
+  hand-copied).
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
