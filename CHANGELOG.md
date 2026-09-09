@@ -2,6 +2,54 @@
 
 All notable changes to this skill are documented here.
 
+## [Unreleased]
+
+Working toward v1.0.0 per the roadmap below. Entries here are added as
+milestones land; VERSION is not bumped until a real release is cut.
+
+### Milestone: Source Adapter Layer (toward v0.2.0)
+
+- Added `scb/` — a standard-library-first Python runtime package
+  implementing the acquisition/resolution/analytics pipeline.
+- `scb/records.py` — the Canonical Scholarly Record dataclass shape
+  (identifiers, access, versions, provenance, conflicts).
+- `scb/identifiers.py` — DOI/PMID/PMCID/arXiv/ISSN/ORCID normalization and
+  EXACT/PROBABLE/AMBIGUOUS/UNRESOLVED identifier-match classification.
+- `scb/dedup.py` — deduplication with the documented priority chain
+  (identifier match → title+author+year → conservative fuzzy title
+  review); never merges on title similarity alone.
+- `scb/versions.py` — version resolution keeping
+  `bibliographic_authority` and `best_lawful_access` as two independent,
+  never-overwriting concepts.
+- `scb/http_client.py` — shared HTTP engine: timeout, bounded retry,
+  `Retry-After` handling, exponential backoff, and adapter state
+  classification (AVAILABLE/DEGRADED/RATE_LIMITED/AUTH_REQUIRED/
+  UNAVAILABLE). Standard library only, with an injectable transport so
+  tests never touch the network.
+- `scb/cache.py` — lightweight local file cache (`.cache/<adapter>/`),
+  TTL-based, no database.
+- `scb/adapters/` — seven adapters, each declaring only the capabilities
+  it actually supports: OpenAlex, Crossref, PubMed (E-utilities), PMC,
+  arXiv, DOAJ, and a local User File adapter (txt/md/html/xml/docx via
+  the standard library; PDF requires an injected extractor — no OCR is
+  implemented).
+- 94 new offline unit tests (recorded/sanitized fixtures per adapter);
+  full suite now 120 tests, all passing.
+- **Live-verified** against real APIs during development (2026-09-09,
+  not part of default CI): OpenAlex, Crossref, arXiv, PubMed, and DOAJ
+  adapters confirmed working end-to-end against live responses for a
+  real DOI/PMID/arXiv ID.
+- **Real finding from live verification**: NCBI decommissioned the
+  legacy per-article PMC OA Web Service (`oa.fcgi`) in August 2026,
+  replacing it with bulk PMC Cloud Service (AWS S3) datasets — there is
+  no longer a lightweight per-PMCID REST call for OA status/license/
+  full-text pointers. The PMC adapter was redesigned around this: it now
+  only performs PMID/PMCID/DOI cross-reference resolution via the
+  current NCBI ID Converter API (live-verified), and honestly reports
+  `access.is_oa = None` rather than guessing. OA/license resolution for
+  PMC-hosted articles now relies on OpenAlex locations or Crossref
+  license data instead (see the OA Resolver milestone).
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
