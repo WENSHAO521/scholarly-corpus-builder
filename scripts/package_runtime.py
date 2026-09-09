@@ -36,9 +36,44 @@ FIXED_ZIP_DATE_TIME = (2026, 1, 1, 0, 0, 0)
 
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$")
 
+# Suffixes treated as UTF-8 text for line-ending normalization. Everything
+# else (svg, binary fixtures, etc.) is packaged as raw bytes, unmodified.
+TEXT_SUFFIXES = {
+    ".py",
+    ".md",
+    ".json",
+    ".yml",
+    ".yaml",
+    ".toml",
+    ".txt",
+}
+
 
 class PackagingError(Exception):
     pass
+
+
+def canonical_runtime_bytes(src_path):
+    """Read one runtime source file's bytes for packaging.
+
+    A Windows checkout (git core.autocrlf converting LF -> CRLF on checkout)
+    and a Unix checkout of the exact same commit must produce byte-identical
+    ZIP entries. For files in TEXT_SUFFIXES, CRLF/CR are normalized to LF
+    before packaging so checkout-line-ending differences never leak into the
+    archive; this depends only on the file's own content, never on the
+    working tree's git config, so it holds even for a stray CRLF file no
+    .gitattributes rule caught. Anything outside TEXT_SUFFIXES (svg, any
+    future binary asset) is returned as raw bytes -- normalization must never
+    touch non-text content.
+    """
+    with open(src_path, "rb") as f:
+        raw = f.read()
+    _, suffix = os.path.splitext(src_path)
+    if suffix.lower() not in TEXT_SUFFIXES:
+        return raw
+    text = raw.decode("utf-8")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    return text.encode("utf-8")
 
 
 def read_version(source_root):
@@ -79,11 +114,10 @@ def build_manifest(file_arcnames, version):
 def write_deterministic_zip(source_root, zip_path, entries, manifest_bytes):
     """entries: list of (repo_relative_src_path, arcname_within_package)."""
     tmp_path = zip_path + ".tmp"
-    with zipfile.ZipFile(tmp_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(tmp_path, "w", compression=zipfile.ZIP_STORED) as zf:
         for src_rel, arcname in sorted(entries, key=lambda pair: pair[1]):
             src_path = os.path.join(source_root, src_rel.replace("/", os.sep))
-            with open(src_path, "rb") as f:
-                data = f.read()
+            data = canonical_runtime_bytes(src_path)
             arcpath = "%s/%s" % (PACKAGE_NAME, arcname)
             _write_deterministic_entry(zf, arcpath, data)
         manifest_arcpath = "%s/release-manifest.json" % PACKAGE_NAME
@@ -93,7 +127,12 @@ def write_deterministic_zip(source_root, zip_path, entries, manifest_bytes):
 
 def _write_deterministic_entry(zf, arcname, data):
     info = zipfile.ZipInfo(filename=arcname, date_time=FIXED_ZIP_DATE_TIME)
-    info.compress_type = zipfile.ZIP_DEFLATED
+    info.compress_type = zipfile.ZIP_STORED
+    # ZipInfo defaults create_system to the platform running the build
+    # (0=Windows, 3=Unix/Linux) unless pinned, so identical entry content
+    # would still produce different container bytes depending on which OS
+    # built it. Pin to Unix so every build produces the same bytes.
+    info.create_system = 3
     info.external_attr = 0o644 << 16
     zf.writestr(info, data)
 

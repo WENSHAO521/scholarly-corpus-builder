@@ -142,6 +142,174 @@ class TestPackagingFakeSource(TempTreeTestCase):
             package_runtime.build(self.source_root, self.out_dir)
 
 
+def _canonicalize_to_lf(base_dir):
+    """Rewrite every TEXT_SUFFIXES file under base_dir to use bare LF line
+    endings, regardless of what the test process's own platform/newline
+    translation wrote. Makes the fixture tree's starting point platform-
+    independent before a test deliberately diverges it to CRLF."""
+    for dirpath, _dirs, files in os.walk(base_dir):
+        for fname in files:
+            path = os.path.join(dirpath, fname)
+            _, suffix = os.path.splitext(fname)
+            if suffix.lower() not in package_runtime.TEXT_SUFFIXES:
+                continue
+            with open(path, "rb") as f:
+                raw = f.read()
+            normalized = raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+            if normalized != raw:
+                with open(path, "wb") as f:
+                    f.write(normalized)
+
+
+def _convert_to_crlf(src_dir, dest_dir):
+    """Copy src_dir to dest_dir, rewriting every TEXT_SUFFIXES file's LF
+    line endings to CRLF (simulating a Windows checkout with
+    core.autocrlf=true converting the exact same git-tracked content)."""
+    shutil.copytree(src_dir, dest_dir)
+    for dirpath, _dirs, files in os.walk(dest_dir):
+        for fname in files:
+            path = os.path.join(dirpath, fname)
+            _, suffix = os.path.splitext(fname)
+            if suffix.lower() not in package_runtime.TEXT_SUFFIXES:
+                continue
+            with open(path, "rb") as f:
+                raw = f.read()
+            with open(path, "wb") as f:
+                f.write(raw.replace(b"\n", b"\r\n"))
+
+
+class TestLineEndingNormalization(TempTreeTestCase):
+    """Regression coverage for the CRLF/LF packaging divergence fixed in
+    v0.9.2: a Windows checkout (git core.autocrlf=true) and a Unix checkout
+    of the exact same commit must produce byte-identical runtime ZIPs."""
+
+    def test_crlf_and_lf_source_trees_produce_identical_zip_bytes(self):
+        build_minimal_source_tree(self.source_root)
+        _canonicalize_to_lf(self.source_root)
+
+        crlf_root = tempfile.mkdtemp(prefix="scb-pkg-src-crlf-")
+        crlf_root_child = os.path.join(crlf_root, "tree")
+        try:
+            _convert_to_crlf(self.source_root, crlf_root_child)
+
+            lf_out = tempfile.mkdtemp(prefix="scb-pkg-out-lf-")
+            crlf_out = tempfile.mkdtemp(prefix="scb-pkg-out-crlf-")
+            try:
+                _, _, digest_lf, _, _ = package_runtime.build(self.source_root, lf_out)
+                _, _, digest_crlf, _, _ = package_runtime.build(crlf_root_child, crlf_out)
+                self.assertEqual(
+                    digest_lf,
+                    digest_crlf,
+                    msg="LF and CRLF checkouts of identical source content must "
+                    "package to the same ZIP bytes",
+                )
+            finally:
+                shutil.rmtree(lf_out, ignore_errors=True)
+                shutil.rmtree(crlf_out, ignore_errors=True)
+        finally:
+            shutil.rmtree(crlf_root, ignore_errors=True)
+
+    def test_packaged_text_files_are_lf_normalized(self):
+        build_minimal_source_tree(self.source_root)
+        _canonicalize_to_lf(self.source_root)
+        crlf_root = tempfile.mkdtemp(prefix="scb-pkg-src-crlf2-")
+        crlf_root_child = os.path.join(crlf_root, "tree")
+        try:
+            _convert_to_crlf(self.source_root, crlf_root_child)
+            # Confirm the fixture actually has CRLF before packaging it --
+            # otherwise this test would pass vacuously.
+            with open(os.path.join(crlf_root_child, "README.md"), "rb") as f:
+                self.assertIn(b"\r\n", f.read())
+
+            zip_path, _, _, _, _ = package_runtime.build(crlf_root_child, self.out_dir)
+            with zipfile.ZipFile(zip_path) as zf:
+                for name in zf.namelist():
+                    if name.endswith(".sha256"):
+                        continue
+                    _, suffix = os.path.splitext(name)
+                    if suffix.lower() not in package_runtime.TEXT_SUFFIXES:
+                        continue
+                    data = zf.read(name)
+                    self.assertNotIn(
+                        b"\r\n", data, msg="packaged entry %r still contains CRLF" % name
+                    )
+                    self.assertNotIn(
+                        b"\r", data, msg="packaged entry %r still contains a bare CR" % name
+                    )
+        finally:
+            shutil.rmtree(crlf_root, ignore_errors=True)
+
+    def test_canonical_runtime_bytes_normalizes_text_suffix(self):
+        path = os.path.join(self.source_root, "sample.md")
+        with open(path, "wb") as f:
+            f.write(b"line one\r\nline two\rline three\n")
+        result = package_runtime.canonical_runtime_bytes(path)
+        self.assertEqual(result, b"line one\nline two\nline three\n")
+
+    def test_canonical_runtime_bytes_preserves_binary_content(self):
+        path = os.path.join(self.source_root, "sample.bin")
+        binary_payload = b"\x00\r\n\xff\x01\r\x02\n\x89PNG\r\n\x1a\n"
+        with open(path, "wb") as f:
+            f.write(binary_payload)
+        result = package_runtime.canonical_runtime_bytes(path)
+        self.assertEqual(
+            result,
+            binary_payload,
+            msg="a non-TEXT_SUFFIXES file must be packaged as raw, unmodified bytes",
+        )
+
+    def test_svg_asset_is_not_text_normalized(self):
+        # architecture-diagram.svg is a real runtime file but is XML, not in
+        # TEXT_SUFFIXES -- confirm the packager doesn't touch its bytes even
+        # if it happens to contain CRLF.
+        self.assertNotIn(".svg", package_runtime.TEXT_SUFFIXES)
+
+
+class TestCrossPlatformZipMetadata(TempTreeTestCase):
+    def test_all_entries_use_stored_not_deflated_compression(self):
+        build_minimal_source_tree(self.source_root)
+        zip_path, _, _, _, _ = package_runtime.build(self.source_root, self.out_dir)
+        with zipfile.ZipFile(zip_path) as zf:
+            for info in zf.infolist():
+                self.assertEqual(
+                    info.compress_type,
+                    zipfile.ZIP_STORED,
+                    msg="%r uses compress_type %r, expected ZIP_STORED for "
+                    "byte-deterministic packaging independent of zlib version"
+                    % (info.filename, info.compress_type),
+                )
+
+    def test_all_entries_pin_create_system_to_unix(self):
+        build_minimal_source_tree(self.source_root)
+        zip_path, _, _, _, _ = package_runtime.build(self.source_root, self.out_dir)
+        with zipfile.ZipFile(zip_path) as zf:
+            for info in zf.infolist():
+                self.assertEqual(
+                    info.create_system,
+                    3,
+                    msg="%r has create_system %r, expected 3 (Unix) so Windows "
+                    "and Linux builds produce identical entry metadata"
+                    % (info.filename, info.create_system),
+                )
+
+    def test_all_entries_use_fixed_timestamp(self):
+        build_minimal_source_tree(self.source_root)
+        zip_path, _, _, _, _ = package_runtime.build(self.source_root, self.out_dir)
+        with zipfile.ZipFile(zip_path) as zf:
+            for info in zf.infolist():
+                self.assertEqual(info.date_time, package_runtime.FIXED_ZIP_DATE_TIME)
+
+    def test_entries_are_in_deterministic_sorted_order(self):
+        build_minimal_source_tree(self.source_root)
+        zip_path, _, _, _, _ = package_runtime.build(self.source_root, self.out_dir)
+        with zipfile.ZipFile(zip_path) as zf:
+            names = zf.namelist()
+        # manifest is always appended last by write_deterministic_zip; every
+        # other entry must be in sorted order.
+        body = [n for n in names if not n.endswith("release-manifest.json")]
+        self.assertEqual(body, sorted(body))
+
+
 class TestPackagingRealRepository(unittest.TestCase):
     """Integration check against the actual repository."""
 

@@ -2,6 +2,51 @@
 
 All notable changes to this skill are documented here.
 
+## [0.9.2] - 2026-09-09
+
+A packaging-reproducibility patch on top of v0.9.1 — no `scb/` code,
+schema, or API changed. Fixes a real defect found while auditing
+cross-machine release reproducibility for the v1.1 family release: a
+Windows checkout (`git core.autocrlf=true` converting LF to CRLF) and a
+Unix checkout of the exact same commit produced runtime ZIPs with
+different bytes, because `scripts/package_runtime.py` copied source file
+bytes verbatim with no line-ending normalization.
+
+### Fixed
+
+- Runtime packaging now normalizes supported UTF-8 text files (`.py`,
+  `.md`, `.json`, `.yml`, `.yaml`, `.toml`, `.txt`) to LF before ZIP
+  serialization (`package_runtime.canonical_runtime_bytes()`), preventing
+  logically identical Windows CRLF and Unix LF checkouts from producing
+  different runtime package bytes. Non-text files (e.g.
+  `architecture-diagram.svg`) are packaged as raw, unmodified bytes —
+  normalization never touches binary content.
+- Runtime ZIP entries now use `ZIP_STORED` (was `ZIP_DEFLATED`) and pin
+  `ZipInfo.create_system = 3` (Unix) on every entry, closing the same two
+  cross-platform determinism gaps `scholarly-agent-suite` had already
+  fixed in its own packager (v1.0.1/v1.0.3): `ZIP_DEFLATED` output can
+  differ across zlib versions/platforms for byte-identical input, and
+  `ZipInfo.create_system` otherwise defaults to whichever OS ran the
+  build.
+- `.gitattributes` added, requesting LF for runtime text sources. This is
+  defensive, not the fix itself — the packager does not rely on checkout
+  configuration for reproducibility, since a contributor's existing
+  checkout, a local override, or a differently-configured sync source can
+  all still hand it CRLF content regardless of `.gitattributes`.
+- 9 new regression tests (`tests/test_package_runtime.py`): LF vs. CRLF
+  source trees now package to byte-identical ZIPs; packaged text entries
+  contain no `\r\n`/`\r`; the normalization helper leaves non-text bytes
+  (including CRLF-containing binary payloads) untouched; and the existing
+  cross-platform ZIP metadata protections (`ZIP_STORED`, fixed timestamp,
+  `create_system`, sorted entry order) are now directly asserted rather
+  than only implied by a same-machine determinism check.
+
+### No behavior change
+
+No `scb/` acquisition, normalization, corpus analysis, compiler, or
+scholarly-profile behavior changed. This release touches packaging
+infrastructure only.
+
 ## [0.9.1] - 2026-09-09
 
 A documentation/evidence patch on top of v0.9.0 — no `scb/` code changed,
