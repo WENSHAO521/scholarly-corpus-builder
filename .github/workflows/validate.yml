@@ -76,11 +76,20 @@ jobs:
       - name: Compute checksum
         shell: bash
         run: |
+          # Write checksum.txt with an explicit binary "wb" file handle, not
+          # `python ... > checksum.txt` shell redirection -- on the
+          # windows-latest runner, Python's stdout is opened in text mode,
+          # so redirected output gets CRLF line endings even though the
+          # hash itself is platform-independent. An explicit LF byte here
+          # keeps the artifact itself comparable across runners without a
+          # downstream tr/strip step.
           python -c "
           import glob, hashlib
           path = glob.glob('dist/scholarly-corpus-builder-v*.zip')[0]
-          print(hashlib.sha256(open(path, 'rb').read()).hexdigest())
-          " > checksum.txt
+          digest = hashlib.sha256(open(path, 'rb').read()).hexdigest()
+          with open('checksum.txt', 'wb') as f:
+              f.write((digest + chr(10)).encode('ascii'))
+          "
           cat checksum.txt
 
       - name: Upload checksum
@@ -103,8 +112,11 @@ jobs:
 
       - name: Compare checksums across platforms
         run: |
-          ubuntu_sha="$(cat checksums/pkg-checksum-ubuntu-latest/checksum.txt)"
-          windows_sha="$(cat checksums/pkg-checksum-windows-latest/checksum.txt)"
+          # tr -d '\r' defensively, even though checksum.txt is now written
+          # with an explicit LF byte: this step must compare the hash
+          # value, never an incidental artifact-transfer line ending.
+          ubuntu_sha="$(tr -d '\r' < checksums/pkg-checksum-ubuntu-latest/checksum.txt)"
+          windows_sha="$(tr -d '\r' < checksums/pkg-checksum-windows-latest/checksum.txt)"
           echo "ubuntu-latest:  $ubuntu_sha"
           echo "windows-latest: $windows_sha"
           if [ "$ubuntu_sha" != "$windows_sha" ]; then
