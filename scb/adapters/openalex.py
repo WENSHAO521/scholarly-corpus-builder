@@ -14,10 +14,15 @@ from scb.records import Access, CanonicalRecord, Identifiers, ProvenanceEntry
 
 BASE_URL = "https://api.openalex.org"
 
+# NOTE: "host_venue" was a valid OpenAlex select field historically but
+# is REJECTED by the live API as of 2026-09 (superseded by
+# primary_location/sources) — confirmed live; do not re-add it.
+# parse_work() already falls back to primary_location.source, so no
+# other change was needed once this field was removed.
 _DEFAULT_SELECT = (
     "id,doi,title,display_name,publication_year,publication_date,type,"
     "primary_location,best_oa_location,locations,open_access,authorships,"
-    "abstract_inverted_index,concepts,host_venue,biblio"
+    "abstract_inverted_index,concepts,biblio"
 )
 
 

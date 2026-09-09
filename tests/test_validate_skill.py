@@ -77,6 +77,9 @@ def build_minimal_source_tree(base_dir):
         content = "# %s\n\nExample:\n\n```json\n{\"a\": 1}\n```\n" % ref
         _write(os.path.join(base_dir, "references", ref), content)
 
+    for rel in validate_skill.SCB_ANCHOR_FILES:
+        _write(os.path.join(base_dir, rel.replace("/", os.sep)), '"""stub module"""\n')
+
     fixtures_by_file = _make_eval_fixtures(validate_skill.MIN_TOTAL_EVALS)
     for fname, content in fixtures_by_file.items():
         _write(os.path.join(base_dir, "evals", fname), content)
@@ -98,6 +101,8 @@ def build_minimal_runtime_tree(base_dir):
     _write(os.path.join(base_dir, "agents", "openai.yaml"), "name: scholarly-corpus-builder\n")
     for ref in validate_skill.RUNTIME_REFERENCE_FILES:
         _write(os.path.join(base_dir, "references", ref), "# %s\n" % ref)
+    for rel in validate_skill.SCB_ANCHOR_FILES:
+        _write(os.path.join(base_dir, rel.replace("/", os.sep)), '"""stub module"""\n')
 
 
 class TempTreeTestCase(unittest.TestCase):

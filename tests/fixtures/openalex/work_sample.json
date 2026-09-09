@@ -14,11 +14,6 @@
       "type": "journal"
     }
   },
-  "host_venue": {
-    "display_name": "Journal of Example Studies",
-    "publisher": "Example University Press",
-    "issn": ["1234-5678"]
-  },
   "biblio": {
     "volume": "12",
     "issue": "3",

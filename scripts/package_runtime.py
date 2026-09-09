@@ -52,14 +52,17 @@ def read_version(source_root):
     return version
 
 
-def runtime_file_list():
-    """Explicit allowlist of repo-relative paths to include in the package.
+def runtime_file_list(source_root):
+    """Repo-relative paths to include in the package.
 
-    This never copies the whole repository and deletes things afterward —
-    every entry here is a deliberate inclusion, sourced from the same
-    allowlist the runtime validator checks against.
+    This never copies the whole repository and deletes things afterward:
+    the top-level docs and references/ come from the same explicit
+    allowlist the runtime validator checks against, and the scb/ package
+    modules come from the same controlled directory scan
+    (validate_skill.discover_scb_modules) that validator uses — not an
+    arbitrary "copy everything" walk of the repository.
     """
-    return sorted(validate_skill.RUNTIME_REQUIRED_FILES)
+    return sorted(set(validate_skill.RUNTIME_REQUIRED_FILES) | set(validate_skill.discover_scb_modules(source_root)))
 
 
 def build_manifest(file_arcnames, version):
@@ -162,7 +165,7 @@ def build(source_root, out_dir):
 
     arcnames = []
     entries = []
-    for rel in runtime_file_list():
+    for rel in runtime_file_list(source_root):
         src_path = os.path.join(source_root, rel.replace("/", os.sep))
         if not os.path.isfile(src_path):
             raise PackagingError("required runtime source file missing: %s" % rel)

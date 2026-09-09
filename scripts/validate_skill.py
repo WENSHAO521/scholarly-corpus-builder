@@ -16,6 +16,7 @@ No third-party dependencies (Python standard library only).
 """
 
 import argparse
+import ast
 import json
 import os
 import re
@@ -43,6 +44,37 @@ RUNTIME_REFERENCE_FILES = [
     "style-feature-schema.md",
 ]
 
+# The scb/ Python package is a controlled, version-controlled source
+# directory (no dev artifacts mixed in — tests live under tests/, not
+# here), so — like references/ above — its contents are safely derived
+# from a directory scan rather than hand-maintained as a ~45-entry
+# static list. See discover_scb_modules().
+SCB_PACKAGE_DIR = "scb"
+
+# Anchoring files that must exist to confirm the scb/ package (and its
+# subpackages) are actually present, without hand-listing every module.
+SCB_ANCHOR_FILES = [
+    "scb/__init__.py",
+    "scb/adapters/__init__.py",
+    "scb/analytics/__init__.py",
+    "scb/profiles/__init__.py",
+]
+
+
+def discover_scb_modules(root):
+    scb_dir = os.path.join(root, SCB_PACKAGE_DIR)
+    if not os.path.isdir(scb_dir):
+        return []
+    modules = []
+    for dirpath, dirnames, filenames in os.walk(scb_dir):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for fname in filenames:
+            if fname.endswith(".py"):
+                rel = os.path.relpath(os.path.join(dirpath, fname), root)
+                modules.append(rel.replace(os.sep, "/"))
+    return sorted(modules)
+
+
 # Files required for the Skill to actually be usable at runtime.
 RUNTIME_REQUIRED_FILES = [
     "SKILL.md",
@@ -50,7 +82,7 @@ RUNTIME_REQUIRED_FILES = [
     "LICENSE",
     "VERSION",
     "agents/openai.yaml",
-] + ["references/%s" % name for name in RUNTIME_REFERENCE_FILES]
+] + ["references/%s" % name for name in RUNTIME_REFERENCE_FILES] + SCB_ANCHOR_FILES
 
 # Additional files required only in the full development repository.
 SOURCE_ONLY_REQUIRED_FILES = [
@@ -237,6 +269,25 @@ def check_references_allowlist_drift(root, report):
         )
 
 
+def check_scb_package(root, report):
+    """Confirms scb/ and its subpackages are present, and that every
+    discovered module at least parses (ast.parse — a syntax check only;
+    it never imports/executes the module, so this stays side-effect-free
+    and fast in both source and runtime validation)."""
+    modules = discover_scb_modules(root)
+    if not modules:
+        report.error("scb/ package not found or contains no .py modules")
+        return
+    for rel in modules:
+        path = os.path.join(root, rel.replace("/", os.sep))
+        with open(path, "r", encoding="utf-8") as f:
+            source = f.read()
+        try:
+            ast.parse(source, filename=rel)
+        except SyntaxError as e:
+            report.error("scb module %s does not parse: %s" % (rel, e))
+
+
 def check_version_file(root, report):
     path = os.path.join(root, "VERSION")
     if not os.path.isfile(path):
@@ -276,6 +327,7 @@ def run_source_validation(root):
     check_markdown_links(root, report)
     check_json_blocks(root, report)
     check_references_allowlist_drift(root, report)
+    check_scb_package(root, report)
     return report
 
 
@@ -287,6 +339,7 @@ def run_runtime_validation(root):
     check_markdown_links(root, report)
     check_json_blocks(root, report)
     check_forbidden_runtime_entries(root, report)
+    check_scb_package(root, report)
     return report
 
 

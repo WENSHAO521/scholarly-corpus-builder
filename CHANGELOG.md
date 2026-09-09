@@ -201,6 +201,50 @@ milestones land; VERSION is not bumped until a real release is cut.
   uptime.
 - 28 new tests total (266 total, all passing).
 
+### Milestone: Runtime Packaging for scb/, Real-Data Verification
+
+- `scripts/validate_skill.py` / `scripts/package_runtime.py` — the
+  runtime package now actually includes the `scb/` Python package (44
+  modules). Rather than hand-maintaining a ~45-entry static allowlist
+  (and inevitably letting it drift), `scb/` is treated the same way
+  `references/` already was: a controlled, version-controlled source
+  directory safely derived from a directory scan
+  (`discover_scb_modules()`), with a new `check_scb_package()` that
+  confirms the package (and its subpackages) are present and that every
+  discovered module at least parses (`ast.parse` — syntax-only, no
+  import/execution, so validation stays side-effect-free). Verified the
+  packaged ZIP is not just structurally valid but actually importable:
+  extracted it and ran `import scb; from scb.acquisition import ...`
+  against the real packaged files. Reproducible build confirmed again
+  (identical SHA-256 across two build directories) with the much larger
+  package included.
+- **Real finding from live verification**: while running a genuine
+  live acquisition demo (see below), OpenAlex's `search` endpoint
+  rejected the adapter's `select` parameter — `host_venue` was
+  deprecated and removed from OpenAlex's API (superseded by
+  `primary_location`/`sources`) since the adapter was first written
+  against live data. `lookup_by_doi` didn't hit this (it doesn't use
+  `select`), which is why it kept working while `search` silently broke.
+  Fixed by removing `host_venue` from the adapter's select list;
+  `parse_work()` already had a `primary_location` fallback, so no other
+  change was needed. This is exactly the kind of drift PART LXXII warns
+  about ("external scholarly databases evolve") and is a genuine reason
+  this release cannot honestly claim permanent correctness against
+  live APIs — only correctness as verified on 2026-09-09.
+- **Real end-to-end acquisition demonstrated on live data** (not part of
+  CI, not fabricated): a `discipline` corpus request for "public
+  administration policy diffusion" against the live OpenAlex API
+  returned 25 real works, deduplicated to 25, sampled to 15, with 14
+  carrying real abstract text; a genuine `StyleProfile`/discipline
+  profile was built from that real text (real titles include "Policy
+  Diffusion: Seven Lessons for Scholars and Practitioners",
+  10.1111/j.1540-6210.2012.02610.x). A second live attempt against
+  arXiv hit a real `429 Rate exceeded` and then a real timeout on retry
+  — both were caught cleanly as `adapter_errors` with a `FAILED`
+  manifest status rather than crashing, which is itself a legitimate
+  demonstration of the failure-handling path working under real
+  conditions, not just in offline fault-injection tests.
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
