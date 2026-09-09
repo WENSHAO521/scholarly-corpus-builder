@@ -4,7 +4,43 @@ All notable changes to this skill are documented here.
 
 ## [Unreleased]
 
-Nothing yet — entries land here as work continues toward v1.0.0.
+Toward v1.0.0. Not yet a version bump — see "Still remaining for v1.0.0"
+below for what genuinely isn't done yet.
+
+### Added — cross-disciplinary acquisition demonstration (2026-09-09)
+
+Extended the single existing live demonstration (public administration,
+`README.md` Limitations) to five disciplines, run live against the real
+adapters via `python -m scb.cli acquire`, 15 records requested per
+discipline. Aggregate manifest counts only are recorded here — no scraped
+titles/abstracts/records are stored in this repository (see
+`references/copyright-boundary.md`):
+
+| Discipline | Query | Adapters | Discovered | Deduped | Usable | Rejected | Abstract | Full text |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| Biomedical | "CRISPR gene editing" | pubmed, openalex, crossref | 75 | 0 | 15 | 32 | 9 | 6 |
+| AI/computing | "transformer neural network attention mechanism" | arxiv, openalex, crossref | 75 | 1 | 15 | 25 | 0 | 15 |
+| Humanities | "digital humanities text analysis" | openalex, crossref, doaj | 75 | 1 | 15 | 25 | 6 | 9 |
+| Formal science | "proof complexity computational logic" | arxiv, openalex, crossref | 75 | 1 | 15 | 26 | 0 | 15 |
+
+All four runs reached `status: COMPLETE` (target records met). One
+observation, not chased further here: `duplicates_removed` was 0-1 across
+runs searching multiple overlapping adapters (e.g. pubmed+openalex+crossref
+for the same biomedical query) — plausible if each adapter's top-N results
+for the query didn't substantially overlap at this small `--target-records`
+size, but worth a closer look if a future pass increases target size and
+sees the same near-zero dedup rate.
+
+This remains, honestly, five small-scale (15-record) live demonstrations
+across disciplines — not a human-reviewed, statistically powered benchmark.
+See "Known limitations" in the v0.9.0 entry below for what a real benchmark
+would still require.
+
+### Fixed
+
+- README.md's Limitations section stated "113 fixtures" against a "150+
+  target"; the actual eval suite has been 150 fixtures since v0.9.0's own
+  CHANGELOG entry recorded that count — corrected the stale number.
 
 ## [0.9.0] - 2026-09-09
 

@@ -359,10 +359,13 @@ validation/tests/packaging fail. See `RELEASE_CHECKLIST.md`.
   keyword-cue matching, not NLP/ML — every such output is explicitly
   labeled an inferred heuristic, never presented as objective fact.
 - No systematic, human-QA'd, cross-disciplinary benchmark across many
-  fields has been run — one real end-to-end acquisition (live OpenAlex
-  data, public administration) is documented in CHANGELOG as a genuine
-  but small-scale demonstration, not a validated benchmark.
+  fields has been run — five real, live, end-to-end acquisitions (public
+  administration/policy diffusion, biomedical, AI/computing, humanities,
+  formal science; see CHANGELOG) are documented as genuine but small-scale
+  (15 records each) demonstrations, not a validated benchmark with human
+  review of output quality.
 - No Voice Engine A/B comparison — the Scholarly Voice Engine this skill
   is designed to feed does not exist in this repository to test against.
-- Eval suite is 113 fixtures, short of a 150+ target; growth stopped at
-  genuinely new scenarios rather than padding to hit a number.
+- Eval suite is 150 fixtures, not a growth trajectory continued
+  indefinitely; held here rather than padded further for the sake of a
+  bigger number.
