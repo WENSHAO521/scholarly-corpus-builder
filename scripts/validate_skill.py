@@ -95,6 +95,7 @@ SOURCE_ONLY_REQUIRED_FILES = [
     "tests/test_package_runtime.py",
     ".github/workflows/validate.yml",
     ".github/workflows/release.yml",
+    ".github/workflows/live-check.yml",
 ]
 
 SOURCE_REQUIRED_EVAL_FILES = [
@@ -108,9 +109,11 @@ SOURCE_REQUIRED_EVAL_FILES = [
     "evals/analytics-honesty.jsonl",
     "evals/compiler-protocol.jsonl",
     "evals/refresh-and-robustness.jsonl",
+    "evals/multilingual-and-tooling.jsonl",
+    "evals/production-hardening.jsonl",
 ]
 
-MIN_TOTAL_EVALS = 100
+MIN_TOTAL_EVALS = 140
 
 # Directories/files that must NOT appear anywhere in a runtime package.
 FORBIDDEN_RUNTIME_DIR_NAMES = {

@@ -1,0 +1,68 @@
+name: Live API Check (manual)
+
+# Optional, manual-only smoke test against the real scholarly APIs.
+# Never runs on push/PR and is never a gate for merging or releasing —
+# routine CI stays fully offline (see validate.yml). This exists so a
+# maintainer can occasionally confirm the adapters still match live
+# API shapes (see CHANGELOG for real drift already found and fixed
+# this way: OpenAlex's host_venue removal, PMC's OA service
+# decommissioning).
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  live-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Live adapter smoke test
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, ".")
+
+          from scb.http_client import HttpClient
+          from scb.adapters.crossref import CrossrefAdapter
+          from scb.adapters.openalex import OpenAlexAdapter
+          from scb.adapters.arxiv import ArxivAdapter
+          from scb.adapters.pubmed import PubMedAdapter
+          from scb.adapters.pmc import PMCAdapter
+          from scb.adapters.doaj import DoajAdapter
+
+          client = HttpClient(user_agent="scholarly-corpus-builder-ci-live-check/1.0 (mailto:ci@example.com)", timeout=20)
+          failures = []
+
+          def check(name, fn):
+              try:
+                  fn()
+                  print("OK:", name)
+              except Exception as e:  # noqa: BLE001
+                  print("FAIL:", name, "-", e)
+                  failures.append(name)
+
+          check("crossref.lookup_by_doi", lambda: CrossrefAdapter(http_client=client, mailto="ci@example.com").lookup_by_doi("10.1371/journal.pone.0000308"))
+          check("openalex.lookup_by_doi", lambda: OpenAlexAdapter(http_client=client, mailto="ci@example.com").lookup_by_doi("10.1371/journal.pone.0000308"))
+          check("arxiv.lookup_by_arxiv", lambda: ArxivAdapter(http_client=client).lookup_by_arxiv("1706.03762"))
+          check("pubmed.lookup_by_pmid", lambda: PubMedAdapter(http_client=client, tool="scb-ci", email="ci@example.com").lookup_by_pmid("17375194"))
+          check("pmc.lookup_by_pmcid", lambda: PMCAdapter(http_client=client, tool="scb-ci", email="ci@example.com").lookup_by_pmcid("PMC1817752"))
+          check("doaj.search", lambda: DoajAdapter(http_client=client).search("open access", page_size=1))
+
+          if failures:
+              print("\nLive check found drift in:", ", ".join(failures))
+              print("This is informational only and does not fail routine CI — investigate and fix the affected adapter(s).")
+          PY
+
+      - name: Report outcome (never fails the workflow)
+        if: always()
+        run: echo "Live check complete — see the previous step's output for any drift found. This workflow never blocks merges or releases."

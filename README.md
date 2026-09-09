@@ -293,10 +293,16 @@ method; investigate first if a fast-forward pull is rejected.
 The development repository additionally includes:
 
 ```text
+scb/                           the runtime engine (adapters, resolution, analytics, profiles, compiler)
 scripts/validate_skill.py    source and runtime validator
 scripts/package_runtime.py   deterministic runtime ZIP packager
-tests/                        standard-library unittest suite
-.github/workflows/            CI (validation + tagged release)
+tests/                        standard-library unittest suite (284 tests)
+.github/workflows/validate.yml     CI: offline validation + tests on every push/PR
+.github/workflows/release.yml      tag-driven release (vX.Y.Z tags only)
+.github/workflows/live-check.yml   manual-only smoke test against real scholarly
+                                    APIs (workflow_dispatch) — informational, never
+                                    blocks a merge or release; this is how the
+                                    OpenAlex/PMC API drift in CHANGELOG was found
 ```
 
 ### Validation

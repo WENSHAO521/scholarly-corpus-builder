@@ -310,6 +310,27 @@ milestones land; VERSION is not bumped until a real release is cut.
   (`usable: 3, status: COMPLETE`).
 - 18 new tests (284 total, all passing).
 
+### Milestone: Live-Check CI Workflow + Eval Suite Reaches 150
+
+- `.github/workflows/live-check.yml` — manual-only (`workflow_dispatch`)
+  smoke test against the real OpenAlex/Crossref/arXiv/PubMed/PMC/DOAJ
+  APIs. Deliberately never runs on push/PR and never fails the
+  workflow itself — it's how the OpenAlex `host_venue` and PMC OA
+  Web Service drift documented earlier in this file were actually
+  found, and it stays available for a maintainer to re-run before
+  cutting a release without making routine CI depend on live uptime.
+- Added `evals/multilingual-and-tooling.jsonl` (20) and
+  `evals/production-hardening.jsonl` (17): multilingual/cross-language
+  handling, CLI usage, manifest usable/depth integrity (regression
+  coverage for the bug just fixed), live-API-drift response,
+  security/reproducibility/dependency-policy scenarios, and explicit
+  benchmark-honesty fixtures (a single live demonstration must never be
+  presented as a validated cross-disciplinary benchmark, and no Voice
+  Engine A/B claim may be made without a real Voice Engine to test
+  against). **Total eval fixtures: 150** — the original spec's target,
+  reached with genuinely distinct scenarios rather than padding.
+  `MIN_TOTAL_EVALS` raised from 100 to 140.
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
