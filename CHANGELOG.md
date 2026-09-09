@@ -21,6 +21,13 @@ bytes verbatim with no line-ending normalization.
   different runtime package bytes. Non-text files (e.g.
   `architecture-diagram.svg`) are packaged as raw, unmodified bytes —
   normalization never touches binary content.
+- `LICENSE` and `VERSION` — both real runtime package members with no file
+  suffix — are also normalized via an explicit `TEXT_FILENAMES` basename
+  match, matched only by exact known filename (never "any extensionless
+  file", which would wrongly sweep in an extensionless binary). Found by
+  the new cross-platform CI job below: a real `windows-latest` checkout of
+  this exact commit packaged `LICENSE` with different bytes than
+  `ubuntu-latest` until this was added — `TEXT_SUFFIXES` alone missed it.
 - Runtime ZIP entries now use `ZIP_STORED` (was `ZIP_DEFLATED`) and pin
   `ZipInfo.create_system = 3` (Unix) on every entry, closing the same two
   cross-platform determinism gaps `scholarly-agent-suite` had already
@@ -33,13 +40,22 @@ bytes verbatim with no line-ending normalization.
   configuration for reproducibility, since a contributor's existing
   checkout, a local override, or a differently-configured sync source can
   all still hand it CRLF content regardless of `.gitattributes`.
-- 9 new regression tests (`tests/test_package_runtime.py`): LF vs. CRLF
+- `.github/workflows/validate.yml` gained a `packaging-determinism` job
+  that builds the runtime package on both `ubuntu-latest` and
+  `windows-latest` and asserts identical SHA-256 (plus a
+  `packaging-determinism-compare` job). Deliberately not a second full
+  test run or a Python-version matrix — only packaging is platform-
+  sensitive here. This is what actually caught the `LICENSE` gap above; a
+  same-OS determinism check cannot.
+- 12 new regression tests (`tests/test_package_runtime.py`): LF vs. CRLF
   source trees now package to byte-identical ZIPs; packaged text entries
   contain no `\r\n`/`\r`; the normalization helper leaves non-text bytes
-  (including CRLF-containing binary payloads) untouched; and the existing
-  cross-platform ZIP metadata protections (`ZIP_STORED`, fixed timestamp,
-  `create_system`, sorted entry order) are now directly asserted rather
-  than only implied by a same-machine determinism check.
+  (including CRLF-containing binary payloads) and non-`TEXT_FILENAMES`
+  extensionless files untouched; `LICENSE`/`VERSION` are confirmed
+  normalized; and the existing cross-platform ZIP metadata protections
+  (`ZIP_STORED`, fixed timestamp, `create_system`, sorted entry order) are
+  now directly asserted rather than only implied by a same-machine
+  determinism check.
 
 ### No behavior change
 
