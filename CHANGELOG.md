@@ -273,6 +273,43 @@ milestones land; VERSION is not bumped until a real release is cut.
   dependent site (`scb/comparison.py`'s adaptation-suggestion check)
   updated to match. All 266 tests still pass.
 
+### Milestone: Multilingual Support + CLI `acquire` (toward v0.8.0)
+
+- `scb/multilingual.py` — `detect_language()` (script-based for
+  Chinese/Japanese/Korean, stopword-frequency based for en/de/fr/es;
+  honestly labeled as a heuristic, not a statistical language-ID
+  model), `group_by_language()` (never merges groups), and
+  `build_language_aware_profile()` / `build_cross_language_author_profile()`.
+  The key honesty decision here: `scb/analytics/{lexical,claims,
+  rhetorical,rhythm}.py` all match English-language cue words/phrases,
+  so running them against non-English text would silently produce a
+  misleading near-zero measurement. Rather than do that,
+  `build_language_aware_profile()` explicitly marks those sub-features
+  `not_applicable` for any language other than English and records why
+  in `known_biases` — including a separate flag that whitespace-based
+  word counts under-count Chinese/Japanese text. `Document` gained
+  optional `language`/`original_language`/`translation_status` fields
+  (PART XLV translation boundary), defaulted to `None` so existing
+  callers are unaffected.
+- `scb/cli.py acquire` — runs the full acquisition pipeline
+  (search → dedup → OA resolve → depth-filter → sample → manifest) from
+  the command line, `--include-records` optional. Live-verified against
+  real Crossref data.
+- **Real bug found and fixed while live-testing `acquire`**: requesting
+  `LEVEL_0_METADATA` depth against real Crossref results (which rarely
+  carry abstracts) returned `usable: 0` even though 3 records correctly
+  satisfied the requested metadata-only depth. `manifest.py`'s
+  `counts_from_resolutions()` was re-deriving "usable" from a fixed
+  abstract-or-better OA-state threshold, ignoring what depth the caller
+  had actually asked for — even though `scb/acquisition.py` had already
+  depth-filtered the records before counting them. Fixed so `usable`
+  simply means "met the requested depth" (`len(resolutions)`), with the
+  per-state tally kept only as a transparency breakdown, not a second
+  usability gate. Added both a unit-level and an acquisition-level
+  regression test; the fix was re-verified against live data
+  (`usable: 3, status: COMPLETE`).
+- 18 new tests (284 total, all passing).
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,

@@ -40,21 +40,29 @@ class CorpusCounts:
 
 
 def counts_from_resolutions(discovered: int, normalized: int, duplicates_removed: int, resolutions: List[str], rejected: int = 0) -> CorpusCounts:
+    """`resolutions` should be the OA-resolution states of records that
+    have ALREADY been selected as meeting the caller's requested
+    retrieval depth (see scb.acquisition — it depth-filters before
+    calling this). `usable` is therefore simply `len(resolutions)`:
+    "usable" means "met the depth actually requested," not a fixed
+    abstract-or-better bar — a caller who only asked for
+    LEVEL_0_METADATA and got exactly that has a usable record, even
+    though its access happens to be restricted at fuller depths. The
+    per-state tally below is purely a transparency breakdown of *how*
+    each usable record resolved, not a second usability gate."""
     counts = CorpusCounts(discovered=discovered, normalized=normalized, duplicates_removed=duplicates_removed, rejected=rejected)
+    counts.usable = len(resolutions)
     for state in resolutions:
         if state == STRUCTURED_FULLTEXT_AVAILABLE:
             counts.structured_fulltext += 1
-            counts.usable += 1
         elif state in (OA_FULLTEXT_AVAILABLE, OA_PDF_AVAILABLE):
             counts.fulltext_available += 1
-            counts.usable += 1
         elif state == ABSTRACT_AVAILABLE:
             counts.abstract_available += 1
-            counts.usable += 1
         elif state == "ACCESS_RESTRICTED":
             counts.restricted += 1
         elif state == "OA_LANDING_PAGE":
-            counts.usable += 1
+            pass  # already counted in `usable`; no dedicated sub-bucket
         else:
             counts.metadata_only += 1
     return counts

@@ -6,6 +6,7 @@ so results are machine-readable.
 Commands:
     lookup      --adapter NAME --doi/--pmid/--pmcid/--arxiv ID
     search      --adapter NAME QUERY
+    acquire     --corpus-type TYPE --purpose PURPOSE --target-records N --adapters a,b,c QUERY
     resolve-oa  reads a canonical record as JSON from stdin, prints AccessResolution
     validate    runs scripts/validate_skill.py in the given mode (thin wrapper)
 """
@@ -18,6 +19,7 @@ import json
 import sys
 from typing import Any, Dict
 
+from scb.acquisition import CorpusRequest, acquire_corpus
 from scb.adapters.arxiv import ArxivAdapter
 from scb.adapters.crossref import CrossrefAdapter
 from scb.adapters.doaj import DoajAdapter
@@ -88,6 +90,26 @@ def cmd_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_acquire(args: argparse.Namespace) -> int:
+    adapter_names = [a.strip() for a in args.adapters.split(",") if a.strip()]
+    adapters = {name: _make_adapter(name) for name in adapter_names}
+    request = CorpusRequest(
+        corpus_type=args.corpus_type,
+        target=args.query,
+        purpose=args.purpose,
+        target_records=args.target_records,
+        retrieval_depth=args.retrieval_depth,
+    )
+    result = acquire_corpus(request, adapters)
+    output = {
+        "manifest": result.manifest.to_dict(),
+        "adapter_errors": result.adapter_errors,
+        "records": [r.to_dict() for r in result.records] if args.include_records else None,
+    }
+    _print_json(output)
+    return 0 if result.manifest.status not in ("FAILED",) else 1
+
+
 def cmd_resolve_oa(args: argparse.Namespace) -> int:
     raw = sys.stdin.read()
     data = json.loads(raw)
@@ -122,6 +144,16 @@ def build_parser() -> argparse.ArgumentParser:
     search_p.add_argument("--adapter", required=True, choices=sorted(ADAPTER_REGISTRY))
     search_p.add_argument("query")
     search_p.set_defaults(func=cmd_search)
+
+    acquire_p = sub.add_parser("acquire", help="Run the full acquisition pipeline (search -> dedup -> OA resolve -> sample -> manifest)")
+    acquire_p.add_argument("--corpus-type", required=True, choices=["discipline", "journal", "historical_scholar", "author", "book", "comparison"])
+    acquire_p.add_argument("--purpose", required=True)
+    acquire_p.add_argument("--adapters", required=True, help="Comma-separated adapter names, e.g. openalex,crossref")
+    acquire_p.add_argument("--target-records", type=int, default=30)
+    acquire_p.add_argument("--retrieval-depth", default="LEVEL_1_ABSTRACT", choices=["LEVEL_0_METADATA", "LEVEL_1_ABSTRACT", "LEVEL_2_STRUCTURE", "LEVEL_3_FULLTEXT"])
+    acquire_p.add_argument("--include-records", action="store_true", help="Include the full selected records in the output (default: manifest + errors only)")
+    acquire_p.add_argument("query")
+    acquire_p.set_defaults(func=cmd_acquire)
 
     resolve_p = sub.add_parser("resolve-oa", help="Read a CanonicalRecord as JSON from stdin, print its AccessResolution")
     resolve_p.set_defaults(func=cmd_resolve_oa)

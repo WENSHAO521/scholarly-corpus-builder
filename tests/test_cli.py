@@ -19,7 +19,7 @@ class FakeAdapter:
         pass
 
     def search(self, query):
-        return [CanonicalRecord(record_id="r1", title="Result for %s" % query)]
+        return [CanonicalRecord(record_id="r1", title="Result for %s" % query, abstract="An abstract about %s." % query)]
 
     def lookup_by_doi(self, doi):
         if doi == "10.1/missing":
@@ -62,6 +62,26 @@ class TestCliLookupAndSearch(unittest.TestCase):
     def test_unknown_adapter_exits(self):
         with self.assertRaises(SystemExit):
             self._run(["lookup", "--adapter", "not_a_real_adapter", "--doi", "x"])
+
+    def test_acquire_runs_full_pipeline(self):
+        code, out = self._run([
+            "acquire", "--corpus-type", "journal", "--purpose", "journal_style",
+            "--adapters", "fake", "--target-records", "1", "policy diffusion",
+        ])
+        self.assertEqual(code, 0)
+        data = json.loads(out)
+        self.assertIn("manifest", data)
+        self.assertEqual(data["manifest"]["corpus_type"], "journal")
+        self.assertIsNone(data["records"])  # --include-records not passed
+
+    def test_acquire_include_records_flag(self):
+        code, out = self._run([
+            "acquire", "--corpus-type", "journal", "--purpose", "journal_style",
+            "--adapters", "fake", "--target-records", "1", "--include-records", "policy diffusion",
+        ])
+        data = json.loads(out)
+        self.assertIsNotNone(data["records"])
+        self.assertEqual(len(data["records"]), 1)
 
 
 class TestCliResolveOa(unittest.TestCase):

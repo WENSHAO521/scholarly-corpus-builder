@@ -44,6 +44,11 @@ class TestDetermineSufficiency(unittest.TestCase):
 
 class TestCountsFromResolutions(unittest.TestCase):
     def test_counts_derived_from_actual_states(self):
+        # `resolutions` represents records that already passed the
+        # caller's requested-depth filter (see scb.acquisition) — so
+        # every entry here is usable by construction, regardless of its
+        # individual OA state; the per-state tally is a breakdown of
+        # *how* each usable record resolved, not a second usability gate.
         states = [
             "STRUCTURED_FULLTEXT_AVAILABLE",
             "OA_FULLTEXT_AVAILABLE",
@@ -53,7 +58,7 @@ class TestCountsFromResolutions(unittest.TestCase):
         ]
         counts = counts_from_resolutions(discovered=10, normalized=8, duplicates_removed=2, resolutions=states)
         self.assertEqual(counts.discovered, 10)
-        self.assertEqual(counts.usable, 3)  # structured + fulltext + abstract
+        self.assertEqual(counts.usable, 5)  # all 5 already passed the depth filter
         self.assertEqual(counts.structured_fulltext, 1)
         self.assertEqual(counts.fulltext_available, 1)
         self.assertEqual(counts.abstract_available, 1)

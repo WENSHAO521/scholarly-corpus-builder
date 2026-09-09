@@ -96,6 +96,11 @@ class Document:
     abstract: Optional[str]
     sections: List[Section] = field(default_factory=list)
     references: List[str] = field(default_factory=list)
+    # PART XLV translation boundary — all optional/None by default so
+    # existing single-language callers are unaffected. See scb/multilingual.py.
+    language: Optional[str] = None
+    original_language: Optional[str] = None
+    translation_status: Optional[str] = None
 
     def all_paragraphs(self) -> List[str]:
         return [p for s in self.sections for p in s.paragraphs]
@@ -104,7 +109,14 @@ class Document:
         return [s for s in self.sections if s.role == role]
 
 
-def normalize_text(raw_text: str, title: Optional[str] = None, abstract: Optional[str] = None) -> Document:
+def normalize_text(
+    raw_text: str,
+    title: Optional[str] = None,
+    abstract: Optional[str] = None,
+    language: Optional[str] = None,
+    original_language: Optional[str] = None,
+    translation_status: Optional[str] = None,
+) -> Document:
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", raw_text or "") if p.strip()]
 
     sections: List[Section] = []
@@ -133,4 +145,12 @@ def normalize_text(raw_text: str, title: Optional[str] = None, abstract: Optiona
     sections = [s for s in sections if not (s.heading is None and not s.paragraphs)]
     sections = [s for s in sections if s.role != "references"]
 
-    return Document(title=title, abstract=abstract, sections=sections, references=references)
+    return Document(
+        title=title,
+        abstract=abstract,
+        sections=sections,
+        references=references,
+        language=language,
+        original_language=original_language,
+        translation_status=translation_status,
+    )

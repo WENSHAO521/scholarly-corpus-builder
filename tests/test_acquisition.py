@@ -90,6 +90,22 @@ class TestAcquireCorpus(unittest.TestCase):
         self.assertEqual(len(result.records), 0)
         self.assertEqual(result.manifest.status, "FAILED")
 
+    def test_metadata_only_records_are_usable_when_that_depth_was_requested(self):
+        # Regression test: a caller who explicitly asks for only
+        # LEVEL_0_METADATA must have those metadata-only records counted
+        # as usable — "usable" means "met the requested depth," not a
+        # fixed abstract-or-better bar (see scb/manifest.py).
+        thin_records = [_rec("r%d" % i, abstract=None, is_oa=None, author="Author %d" % i) for i in range(5)]
+        adapters = {"crossref": FakeAdapter(thin_records)}
+        request = CorpusRequest(
+            corpus_type="journal", target="x", purpose="journal_style",
+            target_records=5, retrieval_depth="LEVEL_0_METADATA",
+        )
+        result = acquire_corpus(request, adapters)
+        self.assertEqual(len(result.records), 5)
+        self.assertEqual(result.manifest.counts.usable, 5)
+        self.assertEqual(result.manifest.status, "COMPLETE")
+
     def test_manifest_counts_are_never_fabricated(self):
         records = [_rec("r%d" % i, author="Author %d" % i) for i in range(4)]
         adapters = {"crossref": FakeAdapter(records)}
