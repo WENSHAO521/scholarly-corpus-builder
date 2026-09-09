@@ -9,4 +9,7 @@
 *.toml text eol=lf
 *.txt text eol=lf
 
+LICENSE text eol=lf
+VERSION text eol=lf
+
 *.svg -text

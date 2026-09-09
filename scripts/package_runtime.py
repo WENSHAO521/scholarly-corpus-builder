@@ -48,9 +48,28 @@ TEXT_SUFFIXES = {
     ".txt",
 }
 
+# Known runtime text files with no suffix for TEXT_SUFFIXES to match --
+# os.path.splitext gives "" for these. Matched by exact basename only (never
+# by "no suffix", which would wrongly sweep in extensionless binaries).
+# LICENSE is not a hypothetical: a real windows-latest CI checkout of this
+# exact commit packaged a different LICENSE byte sequence than ubuntu-latest
+# (caught by .github/workflows/validate.yml's packaging-determinism job)
+# before this set existed.
+TEXT_FILENAMES = {
+    "LICENSE",
+    "VERSION",
+}
+
 
 class PackagingError(Exception):
     pass
+
+
+def _is_text_runtime_file(src_path):
+    _, suffix = os.path.splitext(src_path)
+    if suffix.lower() in TEXT_SUFFIXES:
+        return True
+    return os.path.basename(src_path) in TEXT_FILENAMES
 
 
 def canonical_runtime_bytes(src_path):
@@ -58,18 +77,17 @@ def canonical_runtime_bytes(src_path):
 
     A Windows checkout (git core.autocrlf converting LF -> CRLF on checkout)
     and a Unix checkout of the exact same commit must produce byte-identical
-    ZIP entries. For files in TEXT_SUFFIXES, CRLF/CR are normalized to LF
-    before packaging so checkout-line-ending differences never leak into the
-    archive; this depends only on the file's own content, never on the
-    working tree's git config, so it holds even for a stray CRLF file no
-    .gitattributes rule caught. Anything outside TEXT_SUFFIXES (svg, any
-    future binary asset) is returned as raw bytes -- normalization must never
-    touch non-text content.
+    ZIP entries. For text files (TEXT_SUFFIXES or TEXT_FILENAMES), CRLF/CR
+    are normalized to LF before packaging so checkout-line-ending
+    differences never leak into the archive; this depends only on the
+    file's own content, never on the working tree's git config, so it holds
+    even for a stray CRLF file no .gitattributes rule caught. Anything else
+    (svg, any future binary asset) is returned as raw bytes -- normalization
+    must never touch non-text content.
     """
     with open(src_path, "rb") as f:
         raw = f.read()
-    _, suffix = os.path.splitext(src_path)
-    if suffix.lower() not in TEXT_SUFFIXES:
+    if not _is_text_runtime_file(src_path):
         return raw
     text = raw.decode("utf-8")
     text = text.replace("\r\n", "\n").replace("\r", "\n")

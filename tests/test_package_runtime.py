@@ -264,6 +264,36 @@ class TestLineEndingNormalization(TempTreeTestCase):
         # if it happens to contain CRLF.
         self.assertNotIn(".svg", package_runtime.TEXT_SUFFIXES)
 
+    def test_extensionless_license_file_is_normalized(self):
+        # Regression: LICENSE has no suffix, so TEXT_SUFFIXES-only matching
+        # missed it -- a real windows-latest CI checkout of the exact same
+        # commit packaged a different LICENSE byte sequence than
+        # ubuntu-latest until TEXT_FILENAMES was added.
+        path = os.path.join(self.source_root, "LICENSE")
+        with open(path, "wb") as f:
+            f.write(b"MIT License\r\n\r\nCopyright (c) 2026\r\n")
+        result = package_runtime.canonical_runtime_bytes(path)
+        self.assertNotIn(b"\r", result)
+        self.assertEqual(result, b"MIT License\n\nCopyright (c) 2026\n")
+
+    def test_extensionless_version_file_is_normalized(self):
+        path = os.path.join(self.source_root, "VERSION")
+        with open(path, "wb") as f:
+            f.write(b"0.9.2\r\n")
+        result = package_runtime.canonical_runtime_bytes(path)
+        self.assertEqual(result, b"0.9.2\n")
+
+    def test_unknown_extensionless_file_is_not_text_normalized(self):
+        # Only the specific known runtime text filenames in TEXT_FILENAMES
+        # are matched by basename -- an arbitrary extensionless file (e.g.
+        # a binary fixture with no suffix) must not be swept in.
+        path = os.path.join(self.source_root, "some_binary_blob")
+        binary_payload = b"\x00\r\n\xff\x01\r\x02\n"
+        with open(path, "wb") as f:
+            f.write(binary_payload)
+        result = package_runtime.canonical_runtime_bytes(path)
+        self.assertEqual(result, binary_payload)
+
 
 class TestCrossPlatformZipMetadata(TempTreeTestCase):
     def test_all_entries_use_stored_not_deflated_compression(self):
