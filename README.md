@@ -38,6 +38,7 @@ reuse (see the Corpus Selection Gate in `references/refresh-policy.md`).
 | Journal | One venue's observed writing architecture | `references/journal-profile.md` |
 | Historical scholar | Transferable argument mechanics, not phrasing | `references/historical-profile.md` |
 | Author | The user's own established voice | `references/author-profile.md` |
+| Book | Chapter-level structure of a monograph, analyzed on its own terms | `scb/profiles/book.py` |
 
 ## Source hierarchy
 
@@ -103,21 +104,68 @@ a Scholarly Voice Engine, and a Journal Fit Engine. This skill decides *what*
 to acquire and *what profile* results; it does not route models and does not
 decide manuscript-journal fit. See `references/integration.md`.
 
+## Runtime engine (`scb/`)
+
+A standard-library-first Python package implementing the acquisition →
+resolution → analytics → profiling → compilation pipeline in code:
+
+- **Source adapters**: OpenAlex, Crossref, PubMed, PMC, arXiv, DOAJ, and a
+  local User File adapter (txt/md/html/xml/docx; PDF needs a host-supplied
+  extractor — no OCR). Each declares only the capabilities it actually
+  supports and is live-verified against the real APIs (see CHANGELOG).
+- **Resolution**: identifier normalization/matching, deduplication (never
+  merges on title similarity alone), version resolution
+  (`bibliographic_authority` vs. `best_lawful_access` kept independent),
+  and an OA resolver that never probes a hidden URL or fabricates one.
+- **Acquisition**: a diversified sampling engine (author/year/issue
+  dominance caps), an explicit corpus-manifest sufficiency gate, and an
+  orchestrator where one failing adapter never sinks the whole run.
+- **Analytics**: measured sentence/paragraph/lexical/citation/section
+  metrics, plus rule-based claim/rhetorical-move/intellectual-rhythm
+  classifiers whose every output is explicitly labeled inferred, not fact.
+- **Stability**: a corpus stability engine that actually runs a
+  deterministic split-corpus comparison and a reproducible bootstrap
+  resampler — a profile is never trusted just because a corpus exists.
+- **Profiles & compiler**: journal/discipline/historical/author/book
+  profile builders matching `references/*.md`; incremental author-profile
+  learning and edit-diff learning; a Profile Compiler that keeps
+  `OBSERVED`/`RECOMMENDED`/`MANDATORY` strictly distinct and emits the
+  three cross-skill protocols (`SCHOLARLY_PROFILE_V1`,
+  `VOICE_CONTEXT_V1`, `JOURNAL_STYLE_CONTEXT_V1`); a comparison engine
+  for journal-vs-journal, era-vs-era, and author-vs-journal adaptation
+  (never recommending imitation of a journal's phrasing).
+- **Refresh**: a code form of the Corpus Selection Gate and freshness
+  windows below, reusing the comparison engine for refresh diffs.
+
+A developer CLI (`python -m scb.cli --help`) wraps this for manual
+lookup/search/OA-resolution/validation — JSON output, not required for
+normal Skill use.
+
 ## Evaluation
 
-`evals/` contains fixtures covering source selection, metadata/abstract/
+`evals/` contains 113 fixtures covering source selection, metadata/abstract/
 full-text sufficiency, copyright refusal, paywall handling, deduplication,
 version resolution, journal/discipline sampling, historical/author corpus
-handling, refresh decisions, profile staleness, and multilingual corpora.
-Run `python scripts/validate_skill.py` to check repo integrity (required
-files, frontmatter, JSONL validity, local markdown links, embedded JSON
-schema examples).
+handling, refresh decisions, profile staleness, multilingual corpora, OA
+resolution, analytics honesty (measured vs. inferred), compiler safety
+(OBSERVED/RECOMMENDED/MANDATORY), cross-skill protocols, and offline
+failure handling. Run `python scripts/validate_skill.py` to check repo
+integrity (required files, frontmatter, JSONL validity, local markdown
+links, embedded JSON schema examples, and that the `scb/` package parses).
+Run `python -m unittest discover -s tests -v` for the full test suite
+(unit + offline adapter/failure-handling tests).
 
 ## Installation
 
-> **Python is not required to use Scholarly Corpus Builder as an Agent
-> Skill.** Python is needed only for development, validation, testing,
-> packaging, and CI — never to run the Skill itself.
+> **`SKILL.md`'s instructions are fully usable without Python** — a host
+> with no Python execution can still follow the policy directly (source
+> hierarchy, retrieval minimization, copyright boundary, profile
+> schemas). Where the host *does* provide Python, the Skill prefers its
+> bundled `scb/` runtime engine (adapters, resolution, analytics,
+> stability, profile builders, compiler — see "Runtime engine" below)
+> over ad hoc scraping, since it already implements this policy in
+> tested code. Python is also needed for development, validation,
+> testing, packaging, and CI regardless of which path a given run takes.
 
 Repository: `https://github.com/WENSHAO521/scholarly-corpus-builder`
 
@@ -129,9 +177,12 @@ This repository has two shapes:
   `tests/`, `evals/`, `scripts/`, and `.github/`. Useful if you want to
   modify the Skill, run its validator, or build a release.
 - **Runtime package** — a minimal, frozen ZIP built by
-  `scripts/package_runtime.py`, containing only `SKILL.md`, `README.md`,
-  `LICENSE`, `VERSION`, `agents/openai.yaml`, and `references/`. This is
-  what an Agent Skill host actually needs to load the Skill.
+  `scripts/package_runtime.py`, containing `SKILL.md`, `README.md`,
+  `LICENSE`, `VERSION`, `agents/openai.yaml`, `references/`, and the
+  `scb/` Python package (adapters, resolution, analytics, stability,
+  profile builders, compiler). This is what an Agent Skill host needs
+  to both load the Skill's instructions and, where Python is available,
+  run its bundled engine.
 
 Either shape works as a Skill install, since a host only reads `SKILL.md`
 and the files it references — but the runtime package is smaller and
@@ -291,7 +342,19 @@ validation/tests/packaging fail. See `RELEASE_CHECKLIST.md`.
 - A sampled profile is not a claim of exhaustive representativeness of an
   entire discipline.
 - No direct living-author imitation, ever.
-- No live source adapters yet (OpenAlex/Crossref/PubMed/PMC/arXiv), no open-
-  access resolver, and no real-world corpus benchmark — this release is
-  policy, schemas, and engineering hardening only; acquisition adapters are
-  planned for v0.2.0.
+- PMC's per-article OA lookup was decommissioned by NCBI in August 2026
+  (see CHANGELOG); the PMC adapter now only does identifier
+  cross-referencing, and OA status for PMC-hosted articles relies on
+  OpenAlex/Crossref instead. External APIs evolve — correctness here is
+  as verified on the dates noted in CHANGELOG, not a permanent guarantee.
+- Claim/rhetorical-move/intellectual-rhythm classification is rule-based
+  keyword-cue matching, not NLP/ML — every such output is explicitly
+  labeled an inferred heuristic, never presented as objective fact.
+- No systematic, human-QA'd, cross-disciplinary benchmark across many
+  fields has been run — one real end-to-end acquisition (live OpenAlex
+  data, public administration) is documented in CHANGELOG as a genuine
+  but small-scale demonstration, not a validated benchmark.
+- No Voice Engine A/B comparison — the Scholarly Voice Engine this skill
+  is designed to feed does not exist in this repository to test against.
+- Eval suite is 113 fixtures, short of a 150+ target; growth stopped at
+  genuinely new scenarios rather than padding to hit a number.

@@ -185,3 +185,21 @@ retrieved, classify the failure as `not_found`, `access_restricted`,
 `tool_failure`, `metadata_only`, or `license_unknown` and continue — a retrieval
 problem is not a reasoning problem, so do not escalate to heavier reasoning to
 compensate for it.
+
+## Runtime engine (`scb/`, optional)
+
+When the host provides Python execution, prefer the `scb` package over ad hoc
+scraping or hand-rolled parsing — it already implements this file's policy in
+code: six adapters (OpenAlex, Crossref, PubMed, PMC, arXiv, DOAJ) plus a local
+User File adapter, each declaring only the capabilities it actually supports;
+identifier normalization and deduplication; an OA resolver that never probes
+hidden URLs or fabricates one; a diversified sampling engine and an explicit
+corpus-sufficiency gate; measured style analytics plus a corpus-stability
+engine (split-corpus testing, never trusting a profile just because a corpus
+exists); profile builders matching every schema in `references/`; and a
+Profile Compiler producing `SCHOLARLY_PROFILE_V1` / `VOICE_CONTEXT_V1` /
+`JOURNAL_STYLE_CONTEXT_V1` for downstream skills. See `scb/__init__.py` for
+the module map, and `scripts/validate_skill.py`'s `check_scb_package` for how
+it's kept in sync with the runtime package. Where Python isn't available,
+this file's instructions remain fully usable on their own — see README.md
+"Runtime requirements".
