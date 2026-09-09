@@ -49,3 +49,66 @@ jobs:
             dist/*.zip
             dist/*.sha256
           retention-days: 7
+
+  # Cross-platform packaging determinism only -- not a second full test run.
+  # The real bug this guards (v0.9.2) only showed up on an actual Windows
+  # checkout (git core.autocrlf converting LF to CRLF); a same-OS
+  # determinism check can't catch that, so this needs a real windows-latest
+  # runner, not a second Python version on ubuntu-latest.
+  packaging-determinism:
+    name: Packaging determinism (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build runtime package
+        run: python scripts/package_runtime.py
+
+      - name: Compute checksum
+        shell: bash
+        run: |
+          python -c "
+          import glob, hashlib
+          path = glob.glob('dist/scholarly-corpus-builder-v*.zip')[0]
+          print(hashlib.sha256(open(path, 'rb').read()).hexdigest())
+          " > checksum.txt
+          cat checksum.txt
+
+      - name: Upload checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkg-checksum-${{ matrix.os }}
+          path: checksum.txt
+          retention-days: 7
+
+  packaging-determinism-compare:
+    name: Packaging determinism (compare)
+    needs: packaging-determinism
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download checksums
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pkg-checksum-*
+          path: checksums
+
+      - name: Compare checksums across platforms
+        run: |
+          ubuntu_sha="$(cat checksums/pkg-checksum-ubuntu-latest/checksum.txt)"
+          windows_sha="$(cat checksums/pkg-checksum-windows-latest/checksum.txt)"
+          echo "ubuntu-latest:  $ubuntu_sha"
+          echo "windows-latest: $windows_sha"
+          if [ "$ubuntu_sha" != "$windows_sha" ]; then
+            echo "::error::Runtime package SHA-256 differs between ubuntu-latest and windows-latest builds of the same commit."
+            exit 1
+          fi
+          echo "Runtime package is byte-identical across ubuntu-latest and windows-latest."
