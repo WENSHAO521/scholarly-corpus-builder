@@ -50,6 +50,35 @@ milestones land; VERSION is not bumped until a real release is cut.
   PMC-hosted articles now relies on OpenAlex locations or Crossref
   license data instead (see the OA Resolver milestone).
 
+### Milestone: OA Resolver, Sampling, Manifest, Acquisition Engine (v0.2.0 complete)
+
+- `scb/oa_resolver.py` — resolves a canonical record to one of nine
+  access states (`STRUCTURED_FULLTEXT_AVAILABLE` down to
+  `RESOLUTION_FAILED`), ordered most-to-least actionable. Never probes a
+  hidden publisher URL or fabricates a URL that wasn't actually present
+  on the record.
+- `scb/retrieval_depth.py` — LEVEL_0_METADATA .. LEVEL_3_FULLTEXT, and
+  `meets_requested_depth()` used to filter candidates to the minimum
+  level actually needed.
+- `scb/sampling.py` — diversified sampling with author/year/issue
+  dominance caps and backfill-to-target, plus the suggested size ranges
+  from references/corpus-policy.md as `SUGGESTED_TARGETS`.
+- `scb/manifest.py` — the corpus manifest schema with an explicit,
+  threshold-based sufficiency gate (`COMPLETE` /
+  `COMPLETE_WITH_LIMITATIONS` / `PARTIAL` / `INSUFFICIENT` / `FAILED`) —
+  deliberately not an expensive convergence algorithm.
+- `scb/acquisition.py` — the orchestrator: `CorpusRequest` →
+  search-across-adapters → dedup → OA resolve → depth-filter → sample →
+  manifest. One failing adapter never sinks the whole acquisition; its
+  error is recorded and the manifest notes reduced source coverage as a
+  known bias.
+- 47 new tests (158 total, all passing). Two real bugs were caught and
+  fixed by this milestone's tests before being committed: an OA-resolver
+  state-precedence ordering bug (`RESOLUTION_FAILED` vs `LICENSE_UNKNOWN`
+  for a record with no title) and a sampling-engine test that incorrectly
+  asserted no dominance suppression while reusing a fixture with identical
+  issue metadata across records.
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
