@@ -175,6 +175,32 @@ milestones land; VERSION is not bumped until a real release is cut.
   honestly by label instead of either fabricating precision or silently
   comparing nothing.
 
+### Milestone: CLI, Refresh Infrastructure, Offline Robustness (toward v0.6.0/v0.7.0)
+
+- `scb/cli.py` — a developer CLI (`lookup`, `search`, `resolve-oa`,
+  `validate`), JSON output throughout, not required for normal Skill
+  usage. Live-verified end-to-end: `python -m scb.cli lookup --adapter
+  crossref --doi 10.1371/journal.pone.0000308` against the real Crossref
+  API.
+- `scb/refresh.py` — code form of references/refresh-policy.md's Corpus
+  Selection Gate (`CURRENT`/`AGING`/`STALE`/`INCOMPLETE`/`NEW_TARGET`/
+  `USER_REQUESTED_REFRESH`) with the documented freshness windows
+  (journal 6-12 months, fast-moving journal 3-6 months, discipline
+  12-24 months, no periodic window for historical/author profiles), and
+  `diff_profiles()` for the stable/changed/newly-observed refresh diff,
+  built on top of the existing comparison engine rather than
+  duplicating its logic.
+- 12 new offline failure-handling tests (`tests/test_failure_handling.py`,
+  PART XCI): every adapter's lookup methods return `None` rather than
+  raising on a 404; a persistent 429/503 exhausts the bounded retry
+  policy and then surfaces instead of hanging or fabricating a result;
+  malformed JSON/XML responses raise instead of silently producing a
+  wrong record; empty result sets return an empty list, not an error;
+  and acquisition completes with a partial manifest when some adapters
+  are down. CI remains fully offline — no test depends on live API
+  uptime.
+- 28 new tests total (266 total, all passing).
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
