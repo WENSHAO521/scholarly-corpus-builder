@@ -120,6 +120,29 @@ milestones land; VERSION is not bumped until a real release is cut.
   cue list that missed the bare verb form "cause" (only matched
   "causes"/"caused"/"causing").
 
+### Milestone: Profile Builders + Author Voice Incremental Learning (v0.4.0)
+
+- `scb/profiles/` — journal, discipline, historical-scholar, author, and
+  book profile builders, each mapping the shared StyleProfile onto its
+  corpus-type's schema from references/*.md. Fields that cannot yet be
+  honestly derived (e.g. abstract-only architecture, cross-chapter
+  concept recurrence) are explicitly left `[]`/"not_computed" rather
+  than guessed. The historical-scholar builder never stores excerpt
+  text — verified in tests that raw sentence content does not leak into
+  its output.
+- `scb/author_learning.py` — `merge_author_profile()` incrementally
+  updates an existing author profile from newly added documents without
+  needing the old documents again: numeric leaves are count-weighted
+  and classified `stable`/`strengthening`/`weakening`/`new`/`uncertain`
+  (uncertain below a 5-document confidence floor on either side), and
+  `do_not_preserve` corrections carry forward rather than being
+  silently dropped. `analyze_edit_diffs()` implements PART XXXV's
+  edit-diff learning (comparing AI-draft vs. user-edited-final pairs
+  for recurring sentence-length/hedging/first-person/transition
+  tendencies) as a pure function — it stores no raw text and enables no
+  persistence itself; that stays a caller/host decision.
+- 16 new tests (227 total, all passing).
+
 ## [0.1.1] - 2026-09-09
 
 Release, testing, runtime packaging, and CI hardening. No corpus policy,
